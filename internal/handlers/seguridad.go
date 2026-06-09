@@ -154,8 +154,8 @@ func CrearIncidente(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(inc)
 }
 
-// ListarIncidentes maneja GET /api/v1/incidentes
-func ListarIncidentes(w http.ResponseWriter, r *http.Request) {
+// ListarIncidentes retorna todos los incidentes registrados
+func ListarIncidentes(w http.ResponseWriter, r *http.Request)  {
 	var incidentes []models.Incidente
 
 	if err := storage.DB.Find(&incidentes).Error; err != nil {
