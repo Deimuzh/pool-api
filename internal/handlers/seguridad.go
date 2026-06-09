@@ -128,7 +128,7 @@ func EliminarGuardavida(w http.ResponseWriter, r *http.Request) {
 
 // ─── INCIDENTE ───────────────────────────────────────────────────────────────
 
-// CrearIncidente maneja POST /api/v1/incidentes
+// CrearIncidente registra un nuevo incidente vinculado a un guardavida
 func CrearIncidente(w http.ResponseWriter, r *http.Request) {
 	var inc models.Incidente
 
