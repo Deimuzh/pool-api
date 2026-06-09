@@ -278,7 +278,7 @@ func ListarAccesos(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(accesos)
 }
 
-// ObtenerAcceso maneja GET /api/v1/accesos/{id}
+// ObtenerAcceso retorna un registro de acceso por su ID
 func ObtenerAcceso(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
