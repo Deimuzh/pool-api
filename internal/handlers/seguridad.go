@@ -76,7 +76,7 @@ func ObtenerGuardavida(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(g)
 }
 
-// ActualizarGuardavida maneja PATCH /api/v1/guardavidas/{id}
+// ActualizarGuardavida reemplaza todos los campos del guardavida por los del body
 func ActualizarGuardavida(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
