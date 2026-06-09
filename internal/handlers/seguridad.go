@@ -238,7 +238,7 @@ func EliminarIncidente(w http.ResponseWriter, r *http.Request) {
 
 // ─── ACCESO CLIENTE ──────────────────────────────────────────────────────────
 
-// CrearAcceso maneja POST /api/v1/accesos
+// CrearAcceso registra el ingreso de un cliente a la piscina
 func CrearAcceso(w http.ResponseWriter, r *http.Request) {
 	var acc models.AccesoCliente
 
