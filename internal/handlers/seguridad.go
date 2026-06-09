@@ -264,7 +264,7 @@ func CrearAcceso(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(acc)
 }
 
-// ListarAccesos maneja GET /api/v1/accesos
+// ListarAccesos retorna todos los registros de acceso a la piscina
 func ListarAccesos(w http.ResponseWriter, r *http.Request) {
 	var accesos []models.AccesoCliente
 
