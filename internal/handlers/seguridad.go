@@ -158,8 +158,8 @@ func CrearIncidente(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(inc)
+	w.WriteHeader(http.StatusCreated) // 201 - debe ir antes del Encode, si no Go ignora el status
+	json.NewEncoder(w).Encode(g)
 }
 
 // ListarIncidentes retorna todos los incidentes registrados
