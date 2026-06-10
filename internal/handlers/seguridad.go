@@ -142,6 +142,14 @@ func CrearIncidente(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Verificar que el guardavida existe
+	var g models.Guardavida
+	if err := storage.DB.First(&g, inc.GuardavidaID).Error; err != nil {
+		http.Error(w, "guardavida_id no existe", http.StatusBadRequest)
+
+		return
+	}
+
 	inc.FechaHora = time.Now()
 
 	if err := storage.DB.Create(&inc).Error; err != nil {
