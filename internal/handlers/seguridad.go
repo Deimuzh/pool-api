@@ -98,10 +98,10 @@ func ActualizarGuardavida(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := storage.DB.Save(&g).Error; err != nil {
-		http.Error(w, "Error al actualizar guardavida", http.StatusInternalServerError)
-		return
-	}
+	if err := storage.DB.Model(&g).Updates(&g).Error; err != nil {
+    http.Error(w, "Error al actualizar guardavida", http.StatusInternalServerError)
+    return
+}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -208,9 +208,9 @@ func ActualizarIncidente(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := storage.DB.Save(&inc).Error; err != nil {
-		http.Error(w, "Error al actualizar incidente", http.StatusInternalServerError)
-		return
+	if err := storage.DB.Model(&inc).Updates(&inc).Error; err != nil {
+    http.Error(w, "Error al actualizar incidente", http.StatusInternalServerError)
+    return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -318,10 +318,10 @@ func ActualizarAcceso(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := storage.DB.Save(&acc).Error; err != nil {
-		http.Error(w, "Error al actualizar acceso", http.StatusInternalServerError)
-		return
-	}
+	if err := storage.DB.Model(&acc).Updates(&acc).Error; err != nil {
+    http.Error(w, "Error al actualizar acceso", http.StatusInternalServerError)
+    return
+}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
