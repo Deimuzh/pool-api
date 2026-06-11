@@ -42,6 +42,7 @@ func CrearCliente(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(c)
 }
+// ListarClientes obtiene y devuelve todos los clientes registrados en el sistema.
 
 func ListarClientes(w http.ResponseWriter, r *http.Request) {
 	var clientes []models.Cliente
