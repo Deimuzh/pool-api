@@ -109,6 +109,8 @@ func ActualizarCliente(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(c)
 }
 
+// EliminarCliente elimina un cliente utilizando el ID proporcionado.
+
 func EliminarCliente(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
