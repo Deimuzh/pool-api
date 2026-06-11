@@ -15,7 +15,7 @@ func IniciarDB() {
 	var err error
 	DB, err = gorm.Open(sqlite.Open("piscina.db"), &gorm.Config{})
 	if err != nil {
-		log.Fatal("Error al conectar con la base de datos: ", err)
+		log.Fatal("Error al conectar con la base de datos:", err)
 	}
 
 	// AutoMigrate crea las tablas si no existen
