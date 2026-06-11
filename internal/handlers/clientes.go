@@ -78,6 +78,8 @@ func ObtenerCliente(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(c)
 }
 
+// ActualizarCliente modifica los datos de un cliente existente.
+
 func ActualizarCliente(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
