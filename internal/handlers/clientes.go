@@ -195,6 +195,8 @@ func ObtenerReserva(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(rv)
 }
 
+// ActualizarReserva permite modificar los datos de una reserva existente.
+
 func ActualizarReserva(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
