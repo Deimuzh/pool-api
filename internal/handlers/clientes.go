@@ -12,7 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// ─── CLIENTE ─────────────────────────────────────────────────────────────────
+// CrearCliente maneja POST /api/v1/clientes
 
 func CrearCliente(w http.ResponseWriter, r *http.Request) {
 	var c models.Cliente
