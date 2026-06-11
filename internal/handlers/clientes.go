@@ -174,6 +174,8 @@ func ListarReservas(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(reservas)
 }
 
+// ObtenerReserva consulta una reserva específica mediante su identificador.
+
 func ObtenerReserva(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
