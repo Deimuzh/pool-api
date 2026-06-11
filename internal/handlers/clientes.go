@@ -57,6 +57,8 @@ func ListarClientes(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(clientes)
 }
 
+// ObtenerCliente busca y retorna la información de un cliente según su ID.
+
 func ObtenerCliente(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
