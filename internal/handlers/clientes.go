@@ -128,7 +128,7 @@ func EliminarCliente(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"mensaje":"cliente eliminado"}`))
 }
 
-// ─── RESERVA ─────────────────────────────────────────────────────────────────
+// CrearReserva registra una nueva reserva asociada a un cliente.
 
 func CrearReserva(w http.ResponseWriter, r *http.Request) {
 	var rv models.Reserva
