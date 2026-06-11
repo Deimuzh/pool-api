@@ -12,8 +12,6 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// ─── EQUIPO ──────────────────────────────────────────────────────────────────
-
 func CrearEquipo(w http.ResponseWriter, r *http.Request) {
 	var eq models.Equipo
 
@@ -41,6 +39,7 @@ func CrearEquipo(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(eq)
 }
 
+// ListarEquipos retorna todos los equipos registrados
 func ListarEquipos(w http.ResponseWriter, r *http.Request) {
 	var equipos []models.Equipo
 
@@ -73,6 +72,7 @@ func ObtenerEquipo(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(eq)
 }
 
+// ActualizarEquipo maneja PATCH /api/v1/equipos/{id}
 func ActualizarEquipo(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -121,6 +121,7 @@ func EliminarEquipo(w http.ResponseWriter, r *http.Request) {
 
 // ─── REGISTRO MANTENIMIENTO ──────────────────────────────────────────────────
 
+// CrearRegistroMantenimiento maneja POST /api/v1/mantenimientos
 func CrearRegistroMantenimiento(w http.ResponseWriter, r *http.Request) {
 	var rm models.RegistroMantenimiento
 
@@ -146,6 +147,7 @@ func CrearRegistroMantenimiento(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(rm)
 }
 
+// ListarRegistrosMantenimiento retorna todos los registros
 func ListarRegistrosMantenimiento(w http.ResponseWriter, r *http.Request) {
 	var registros []models.RegistroMantenimiento
 
@@ -178,6 +180,7 @@ func ObtenerRegistroMantenimiento(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(rm)
 }
 
+// ActualizarRegistroMantenimiento maneja PATCH /api/v1/mantenimientos/{id}
 func ActualizarRegistroMantenimiento(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -226,6 +229,7 @@ func EliminarRegistroMantenimiento(w http.ResponseWriter, r *http.Request) {
 
 // ─── PRODUCTO QUIMICO ────────────────────────────────────────────────────────
 
+// CrearProductoQuimico maneja POST /api/v1/quimicos
 func CrearProductoQuimico(w http.ResponseWriter, r *http.Request) {
 	var pq models.ProductoQuimico
 
@@ -249,6 +253,7 @@ func CrearProductoQuimico(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(pq)
 }
 
+// ListarProductosQuimicos retorna todos los productos quimicos
 func ListarProductosQuimicos(w http.ResponseWriter, r *http.Request) {
 	var productos []models.ProductoQuimico
 
@@ -281,6 +286,7 @@ func ObtenerProductoQuimico(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(pq)
 }
 
+// ActualizarProductoQuimico maneja PATCH /api/v1/quimicos/{id}
 func ActualizarProductoQuimico(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -310,6 +316,7 @@ func ActualizarProductoQuimico(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(pq)
 }
 
+// EliminarProductoQuimico maneja DELETE /api/v1/quimicos/{id}
 func EliminarProductoQuimico(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
