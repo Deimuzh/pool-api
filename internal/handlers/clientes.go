@@ -159,6 +159,8 @@ func CrearReserva(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(rv)
 }
 
+// ListarReservas devuelve todas las reservas almacenadas en la base de datos.
+
 func ListarReservas(w http.ResponseWriter, r *http.Request) {
 	var reservas []models.Reserva
 
