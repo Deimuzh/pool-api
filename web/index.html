@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Piscina Los Ceibos — Administración</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f5f5f4; --surface: #ffffff; --border: #e5e5e3;
+      --text: #1c1c1a; --muted: #6b6b67; --hint: #a8a8a4;
+      --green: #0F6E56; --green-dk: #085041;
+      --radius: 10px; --radius-sm: 6px;
+    }
+    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; }
+
+    /* LOGIN */
+    #loginScreen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+    .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2.5rem 2rem; width: 100%; max-width: 360px; }
+    .login-logo { width: 52px; height: 52px; border-radius: 14px; background: var(--green); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; }
+    .login-title { font-size: 17px; font-weight: 600; text-align: center; margin-bottom: 4px; }
+    .login-sub { font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 1.75rem; }
+    .field { margin-bottom: 1rem; }
+    .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+    .field input { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; color: var(--text); background: var(--surface); outline: none; }
+    .field input:focus { border-color: var(--green); box-shadow: 0 0 0 3px #0F6E5620; }
+    .btn-primary { width: 100%; padding: 10px; background: var(--green); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 0.25rem; }
+    .btn-primary:hover { background: var(--green-dk); }
+    .error-msg { font-size: 12px; color: #a32d2d; text-align: center; margin-top: 10px; display: none; }
+
+    /* DASHBOARD */
+    #dashboard { display: none; }
+    .topbar { background: var(--surface); border-bottom: 1px solid var(--border); height: 52px; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 5; }
+    .topbar-left { display: flex; align-items: center; gap: 10px; }
+    .topbar-logo { width: 30px; height: 30px; border-radius: 8px; background: var(--green); display: flex; align-items: center; justify-content: center; }
+    .topbar-name { font-size: 14px; font-weight: 600; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .topbar-user { font-size: 13px; color: var(--muted); }
+    .btn-logout { font-size: 12px; padding: 5px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: transparent; cursor: pointer; color: var(--muted); }
+    .btn-logout:hover { background: var(--bg); }
+    .content { padding: 1.5rem; max-width: 1100px; margin: 0 auto; }
+
+    /* STATS */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
+    .stat-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .stat-value { font-size: 24px; font-weight: 600; }
+    .stat-sub { font-size: 11px; color: var(--hint); margin-top: 2px; }
+
+    /* TABS */
+    .nav-tabs { display: flex; gap: 4px; background: var(--border); border-radius: var(--radius-sm); padding: 3px; margin-bottom: 1.5rem; width: fit-content; }
+    .tab { padding: 7px 16px; border-radius: 5px; font-size: 13px; color: var(--muted); cursor: pointer; border: none; background: transparent; display: flex; align-items: center; gap: 6px; }
+    .tab.active { background: var(--surface); color: var(--text); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+    /* SECTION */
+    .section-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .section-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .btn-add { font-size: 12px; padding: 6px 12px; background: var(--green); color: #fff; border: none; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; gap: 4px; }
+    .btn-add:hover { background: var(--green-dk); }
+
+    /* TABLE */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 500; color: var(--muted); border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.04em; }
+    td { padding: 10px; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafaf9; }
+    .empty-row td { text-align: center; color: var(--hint); padding: 2rem 0; font-size: 13px; }
+
+    /* BADGES */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 500; }
+    .bg-green { background: #EAF3DE; color: #3B6D11; }
+    .bg-amber { background: #FAEEDA; color: #854F0B; }
+    .bg-red   { background: #FCEBEB; color: #A32D2D; }
+    .bg-blue  { background: #E6F1FB; color: #185FA5; }
+    .bg-gray  { background: #F1EFE8; color: #5F5E5A; }
+
+    .btn-icon { background: transparent; border: none; cursor: pointer; color: var(--muted); padding: 5px; border-radius: 5px; font-size: 15px; }
+    .btn-icon:hover { background: var(--bg); color: var(--text); }
+    .btn-icon.danger:hover { background: #FCEBEB; color: #A32D2D; }
+    .panel-hidden { display: none; }
+
+    /* MODAL */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; z-index: 100; }
+    .modal-overlay.open { display: flex; }
+    .modal-box { background: var(--surface); border-radius: var(--radius); padding: 1.5rem; width: 360px; border: 1px solid var(--border); box-shadow: 0 8px 24px rgba(0,0,0,0.12); max-height: 90vh; overflow-y: auto; }
+    .modal-title { font-size: 15px; font-weight: 600; margin-bottom: 1.25rem; }
+    .modal-field { margin-bottom: 0.875rem; }
+    .modal-field label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+    .modal-field input, .modal-field select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); color: var(--text); outline: none; }
+    .modal-field input:focus, .modal-field select:focus { border-color: var(--green); box-shadow: 0 0 0 3px #0F6E5618; }
+    .modal-actions { display: flex; gap: 8px; margin-top: 1.25rem; justify-content: flex-end; }
+    .btn-cancel { padding: 7px 14px; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: transparent; cursor: pointer; color: var(--muted); }
+    .btn-save { padding: 7px 16px; font-size: 13px; background: var(--green); color: #fff; border: none; border-radius: var(--radius-sm); cursor: pointer; font-weight: 500; }
+    .btn-save:hover { background: var(--green-dk); }
+
+    /* ALERTA ACCESO */
+    .acceso-alert { padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 1rem; display: none; }
+    .acceso-alert.denegado { background: #FCEBEB; color: #A32D2D; border: 1px solid #f5c6c6; }
+    .acceso-alert.autorizado { background: #EAF3DE; color: #3B6D11; border: 1px solid #c3dfa5; }
+
+    /* TOAST */
+    .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1c1c1a; color: #fff; padding: 10px 16px; border-radius: var(--radius-sm); font-size: 13px; z-index: 200; opacity: 0; transition: opacity 0.2s; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <i class="ti ti-ripple" style="font-size:24px; color:#fff;"></i>
+    </div>
+    <p class="login-title">Piscina Comunitaria</p>
+    <p class="login-sub">Urbanización Los Ceibos &mdash; Panel de administración</p>
+    <div class="field">
+      <label>Email</label>
+      <input type="text" id="inputUser" placeholder="admin@piscina.com" />
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input type="password" id="inputPass" placeholder="••••••••" />
+    </div>
+    <button class="btn-primary" onclick="doLogin()">Ingresar al sistema</button>
+    <p class="error-msg" id="loginError">Usuario o contraseña incorrectos</p>
+    <p style="font-size:11px; color:var(--hint); text-align:center; margin-top:1.25rem;">Acceso solo para personal autorizado</p>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">
+        <i class="ti ti-ripple" style="font-size:16px; color:#fff;"></i>
+      </div>
+      <span class="topbar-name">Piscina Los Ceibos</span>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-user"><i class="ti ti-user" style="font-size:13px; vertical-align:-1px;"></i> Administrador</span>
+      <button class="btn-logout" onclick="doLogout()">Salir</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <p class="stat-label">Clientes</p>
+        <p class="stat-value" id="statClientes">—</p>
+        <p class="stat-sub">registrados</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Guardavidas</p>
+        <p class="stat-value" id="statGuarda">—</p>
+        <p class="stat-sub">en servicio</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Equipos</p>
+        <p class="stat-value" id="statEquipos">—</p>
+        <p class="stat-sub">registrados</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Incidentes</p>
+        <p class="stat-value" id="statIncidentes">—</p>
+        <p class="stat-sub">registrados</p>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="nav-tabs">
+      <button class="tab active" onclick="showTab('seguridad', this)">
+        <i class="ti ti-shield-check"></i> Seguridad
+      </button>
+      <button class="tab" onclick="showTab('mantenimiento', this)">
+        <i class="ti ti-tool"></i> Mantenimiento
+      </button>
+      <button class="tab" onclick="showTab('clientes', this)">
+        <i class="ti ti-users"></i> Clientes
+      </button>
+    </div>
+
+    <!-- SEGURIDAD -->
+    <div id="panel-seguridad">
+
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title"><i class="ti ti-user-check"></i> Guardavidas</span>
+          <button class="btn-add" onclick="openModal('guardavida')"><i class="ti ti-plus"></i> Agregar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nombre</th><th>Turno</th><th>Certificado</th><th>Estado</th><th></th></tr></thead>
+            <tbody id="tbGuardavidas"><tr class="empty-row"><td colspan="5">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title"><i class="ti ti-alert-triangle"></i> Incidentes</span>
+          <button class="btn-add" onclick="openModal('incidente')"><i class="ti ti-plus"></i> Registrar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <!-- CAMBIO: ahora muestra Guardavida y Cliente involucrado por nombre -->
+            <thead><tr><th>Tipo</th><th>Gravedad</th><th>Guardavida</th><th>Cliente involucrado</th><th>Estado</th><th></th></tr></thead>
+            <tbody id="tbIncidentes"><tr class="empty-row"><td colspan="6">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title"><i class="ti ti-door-enter"></i> Accesos</span>
+          <button class="btn-add" onclick="openModal('acceso')"><i class="ti ti-plus"></i> Registrar</button>
+        </div>
+        <!-- CAMBIO: alerta de resultado de acceso -->
+        <div class="acceso-alert" id="accesoAlert"></div>
+        <div class="table-wrap">
+          <table>
+            <!-- CAMBIO: muestra nombre del cliente y si tiene pago al día -->
+            <thead><tr><th>Cliente</th><th>Pago al día</th><th>Autorizado</th><th>Motivo</th><th>Fecha / Hora</th><th></th></tr></thead>
+            <tbody id="tbAccesos"><tr class="empty-row"><td colspan="6">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- MANTENIMIENTO -->
+    <div id="panel-mantenimiento" class="panel-hidden">
+
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title"><i class="ti ti-settings"></i> Equipos</span>
+          <button class="btn-add" onclick="openModal('equipo')"><i class="ti ti-plus"></i> Agregar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nombre</th><th>Tipo</th><th>Estado</th><th></th></tr></thead>
+            <tbody id="tbEquipos"><tr class="empty-row"><td colspan="4">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title"><i class="ti ti-clipboard-list"></i> Registros de mantenimiento</span>
+          <button class="btn-add" onclick="openModal('mantenimiento')"><i class="ti ti-plus"></i> Registrar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Equipo ID</th><th>Tipo</th><th>Descripción</th><th>Realizado por</th><th></th></tr></thead>
+            <tbody id="tbMantenimientos"><tr class="empty-row"><td colspan="5">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title"><i class="ti ti-flask"></i> Productos químicos</span>
+          <button class="btn-add" onclick="openModal('quimico')"><i class="ti ti-plus"></i> Agregar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nombre</th><th>Stock</th><th>Unidad</th><th>Stock mínimo</th><th></th></tr></thead>
+            <tbody id="tbQuimicos"><tr class="empty-row"><td colspan="5">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CLIENTES -->
+    <div id="panel-clientes" class="panel-hidden">
+
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title"><i class="ti ti-id-badge"></i> Clientes registrados</span>
+          <button class="btn-add" onclick="openModal('cliente')"><i class="ti ti-plus"></i> Agregar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nombre</th><th>Cédula</th><th>Email</th><th>Membresía</th><th></th></tr></thead>
+            <tbody id="tbClientes"><tr class="empty-row"><td colspan="5">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title"><i class="ti ti-calendar-event"></i> Reservas</span>
+          <button class="btn-add" onclick="openModal('reserva')"><i class="ti ti-plus"></i> Nueva reserva</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Cliente ID</th><th>Estado</th><th>Duración (min)</th><th>Fecha / Hora</th><th></th></tr></thead>
+            <tbody id="tbReservas"><tr class="empty-row"><td colspan="5">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title"><i class="ti ti-cash"></i> Pagos</span>
+          <button class="btn-add" onclick="openModal('pago')"><i class="ti ti-plus"></i> Registrar pago</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Cliente ID</th><th>Monto</th><th>Concepto</th><th>Método</th><th>Fecha</th><th></th></tr></thead>
+            <tbody id="tbPagos"><tr class="empty-row"><td colspan="6">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <p class="modal-title" id="modalTitle">Agregar</p>
+    <div id="modalBody"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-save" onclick="guardarModal()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api/v1'
+
+// ── TOKEN ─────────────────────────────────────────────────────────────────────
+// El token se guarda solo en memoria (variable JS), no en localStorage,
+// porque los artifacts/algunos entornos no lo permiten. Esto significa que
+// si recargas la página, se pierde la sesión y hay que loguear de nuevo.
+// Para producción real conviene guardarlo en localStorage o una cookie httpOnly.
+let authToken = null
+
+// fetchConToken agrega automáticamente "Authorization: Bearer <token>"
+// a cualquier llamada a la API. Si el backend responde 401, asumimos que
+// el token venció o es inválido y mandamos al usuario de vuelta al login.
+async function fetchConToken(path, options = {}) {
+  const headers = {
+    ...(options.headers || {}),
+    'Authorization': 'Bearer ' + authToken,
+  }
+  const res = await fetch(API + path, { ...options, headers })
+  if (res.status === 401) {
+    toast('Tu sesión expiró, inicia sesión de nuevo', '#a32d2d')
+    doLogout()
+    throw new Error('No autorizado')
+  }
+  return res
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+document.getElementById('inputPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin() })
+
+async function doLogin() {
+  const email = document.getElementById('inputUser').value.trim()
+  const password = document.getElementById('inputPass').value.trim()
+  const err = document.getElementById('loginError')
+
+  try {
+    const res = await fetch(API + '/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    })
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      err.textContent = data.error || 'Usuario o contraseña incorrectos'
+      err.style.display = 'block'
+      return
+    }
+
+    const data = await res.json()
+    authToken = data.token
+
+    document.getElementById('loginScreen').style.display = 'none'
+    document.getElementById('dashboard').style.display = 'block'
+    document.querySelector('.topbar-user').innerHTML =
+      `<i class="ti ti-user" style="font-size:13px; vertical-align:-1px;"></i> ${data.nombre}`
+    err.style.display = 'none'
+    cargarTodo()
+  } catch (e) {
+    err.textContent = 'No se pudo conectar con el servidor'
+    err.style.display = 'block'
+  }
+}
+
+function doLogout() {
+  authToken = null
+  document.getElementById('dashboard').style.display = 'none'
+  document.getElementById('loginScreen').style.display = 'flex'
+  document.getElementById('inputUser').value = ''
+  document.getElementById('inputPass').value = ''
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function showTab(name, btn) {
+  ['seguridad', 'mantenimiento', 'clientes'].forEach(t =>
+    document.getElementById('panel-' + t).classList.add('panel-hidden'))
+  document.getElementById('panel-' + name).classList.remove('panel-hidden')
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'))
+  btn.classList.add('active')
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function toast(msg, color) {
+  const t = document.getElementById('toast')
+  t.textContent = msg
+  t.style.background = color || '#1c1c1a'
+  t.classList.add('show')
+  setTimeout(() => t.classList.remove('show'), 3000)
+}
+
+// ── API FETCH (todas protegidas con token) ────────────────────────────────────
+async function apiFetch(path) {
+  try {
+    const res = await fetchConToken(path)
+    if (!res.ok) return []
+    const data = await res.json()
+    return Array.isArray(data) ? data : []
+  } catch {
+    return []
+  }
+}
+
+const CACHE = { clientes: [], guardavidas: [], equipos: [], quimicos: [] }
+
+async function cargarTodo() {
+  const [guardavidas, incidentes, accesos, equipos, mantenimientos, quimicos, clientes, reservas, pagos] =
+    await Promise.all([
+      apiFetch('/guardavidas'),
+      apiFetch('/incidentes'),
+      apiFetch('/accesos'),
+      apiFetch('/equipos'),
+      apiFetch('/mantenimientos'),
+      apiFetch('/quimicos'),
+      apiFetch('/clientes'),
+      apiFetch('/reservas'),
+      apiFetch('/pagos'),
+    ])
+
+  CACHE.clientes = clientes
+  CACHE.guardavidas = guardavidas
+  CACHE.equipos = equipos
+  CACHE.quimicos = quimicos
+
+  document.getElementById('statGuarda').textContent     = guardavidas.length
+  document.getElementById('statIncidentes').textContent = incidentes.length
+  document.getElementById('statEquipos').textContent    = equipos.length
+  document.getElementById('statClientes').textContent   = clientes.length
+
+  renderGuardavidas(guardavidas)
+  renderIncidentes(incidentes)
+  renderAccesos(accesos)
+  renderEquipos(equipos)
+  renderMantenimientos(mantenimientos)
+  renderQuimicos(quimicos)
+  renderClientes(clientes)
+  renderReservas(reservas)
+  renderPagos(pagos)
+}
+
+function filaVacia(cols) {
+  return `<tr class="empty-row"><td colspan="${cols}">Sin registros</td></tr>`
+}
+function btnDel(endpoint, id) {
+  return `<button class="btn-icon danger" onclick="eliminar('${endpoint}',${id})" title="Eliminar"><i class="ti ti-trash"></i></button>`
+}
+function btnEdit(type, id) {
+  return `<button class="btn-icon" onclick="openModal('${type}', ${id})" title="Editar"><i class="ti ti-edit"></i></button>`
+}
+
+// ── RENDERS ───────────────────────────────────────────────────────────────────
+
+function renderGuardavidas(data) {
+  const tb = document.getElementById('tbGuardavidas')
+  if (!data.length) { tb.innerHTML = filaVacia(5); return }
+  tb.innerHTML = data.map(g => `
+    <tr>
+      <td>${g.nombre}</td>
+      <td>${g.turno}</td>
+      <td>${g.certificado || '—'}</td>
+      <td><span class="badge ${g.activo ? 'bg-green' : 'bg-gray'}">${g.activo ? 'Activo' : 'Inactivo'}</span></td>
+      <td>${btnEdit('guardavida', g.id)} ${btnDel('/guardavidas', g.id)}</td>
+    </tr>`).join('')
+}
+
+function renderIncidentes(data) {
+  const tb = document.getElementById('tbIncidentes')
+  if (!data.length) { tb.innerHTML = filaVacia(6); return }
+  const col = { leve: 'bg-amber', moderado: 'bg-amber', grave: 'bg-red' }
+  tb.innerHTML = data.map(i => `
+    <tr>
+      <td>${i.tipo}</td>
+      <td><span class="badge ${col[i.gravedad?.toLowerCase()] || 'bg-gray'}">${i.gravedad}</span></td>
+      <td>${i.nombre_guardavida || ('ID: ' + i.guardavida_id)}</td>
+      <td>${i.nombre_cliente
+        ? `<span class="badge bg-red"><i class="ti ti-user" style="font-size:10px"></i> ${i.nombre_cliente}</span>`
+        : '<span style="color:var(--hint)">—</span>'}</td>
+      <td><span class="badge ${i.resuelto ? 'bg-green' : 'bg-amber'}">${i.resuelto ? 'Resuelto' : 'Pendiente'}</span></td>
+      <td>${btnDel('/incidentes', i.id)}</td>
+    </tr>`).join('')
+}
+
+function renderAccesos(data) {
+  const tb = document.getElementById('tbAccesos')
+  if (!data.length) { tb.innerHTML = filaVacia(6); return }
+  tb.innerHTML = data.map(a => `
+    <tr>
+      <td><strong>${a.nombre_cliente || ('ID: ' + a.cliente_id)}</strong></td>
+      <td>${a.pago_al_dia
+        ? '<span class="badge bg-green"><i class="ti ti-check" style="font-size:10px"></i> Pagado</span>'
+        : '<span class="badge bg-red"><i class="ti ti-x" style="font-size:10px"></i> Sin pago</span>'}</td>
+      <td><span class="badge ${a.autorizado ? 'bg-green' : 'bg-red'}">${a.autorizado ? 'Autorizado' : 'Denegado'}</span></td>
+      <td style="color:var(--muted); font-size:12px">${a.motivo || '—'}</td>
+      <td>${new Date(a.fecha_hora).toLocaleString('es-EC')}</td>
+      <td>${btnDel('/accesos', a.id)}</td>
+    </tr>`).join('')
+}
+
+function renderEquipos(data) {
+  const tb = document.getElementById('tbEquipos')
+  if (!data.length) { tb.innerHTML = filaVacia(4); return }
+  const col = { operativo: 'bg-green', 'en reparacion': 'bg-amber', 'fuera de servicio': 'bg-red' }
+  tb.innerHTML = data.map(e => `
+    <tr>
+      <td>${e.nombre}</td>
+      <td>${e.tipo}</td>
+      <td><span class="badge ${col[e.estado?.toLowerCase()] || 'bg-gray'}">${e.estado}</span></td>
+      <td>${btnEdit('equipo', e.id)} ${btnDel('/equipos', e.id)}</td>
+    </tr>`).join('')
+}
+
+function renderMantenimientos(data) {
+  const tb = document.getElementById('tbMantenimientos')
+  if (!data.length) { tb.innerHTML = filaVacia(5); return }
+  tb.innerHTML = data.map(m => `
+    <tr>
+      <td>${m.equipo_id}</td>
+      <td><span class="badge bg-blue">${m.tipo}</span></td>
+      <td>${m.descripcion || '—'}</td>
+      <td>${m.realizado_por || '—'}</td>
+      <td>${btnDel('/mantenimientos', m.id)}</td>
+    </tr>`).join('')
+}
+
+function renderQuimicos(data) {
+  const tb = document.getElementById('tbQuimicos')
+  if (!data.length) { tb.innerHTML = filaVacia(5); return }
+  tb.innerHTML = data.map(q => `
+    <tr>
+      <td>${q.nombre}</td>
+      <td>${q.stock_actual}</td>
+      <td>${q.unidad_medida}</td>
+      <td><span class="badge ${q.stock_actual <= q.nivel_minimo ? 'bg-red' : 'bg-green'}">${q.stock_actual <= q.nivel_minimo ? 'Bajo' : 'OK'}</span></td>
+      <td>${btnEdit('quimico', q.id)} ${btnDel('/quimicos', q.id)}</td>
+    </tr>`).join('')
+}
+
+function renderClientes(data) {
+  const tb = document.getElementById('tbClientes')
+  if (!data.length) { tb.innerHTML = filaVacia(5); return }
+  const mem = { mensual: 'bg-blue', trimestral: 'bg-blue', anual: 'bg-green', ninguna: 'bg-gray' }
+  tb.innerHTML = data.map(c => `
+    <tr>
+      <td><strong>${c.nombre}</strong></td>
+      <td>${c.cedula}</td>
+      <td style="color:var(--muted)">${c.email || '—'}</td>
+      <td><span class="badge ${mem[c.membresia?.toLowerCase()] || 'bg-gray'}">${c.membresia || 'ninguna'}</span></td>
+      <td>${btnDel('/clientes', c.id)}</td>
+    </tr>`).join('')
+}
+
+function renderReservas(data) {
+  const tb = document.getElementById('tbReservas')
+  if (!data.length) { tb.innerHTML = filaVacia(5); return }
+  const col = { confirmada: 'bg-green', pendiente: 'bg-amber', cancelada: 'bg-red' }
+  tb.innerHTML = data.map(rv => `
+    <tr>
+      <td>${rv.cliente_id}</td>
+      <td><span class="badge ${col[rv.estado?.toLowerCase()] || 'bg-gray'}">${rv.estado}</span></td>
+      <td>${rv.duracion ? rv.duracion + ' min' : '—'}</td>
+      <td>${new Date(rv.fecha_hora).toLocaleString('es-EC')}</td>
+      <td>${btnDel('/reservas', rv.id)}</td>
+    </tr>`).join('')
+}
+
+function renderPagos(data) {
+  const tb = document.getElementById('tbPagos')
+  if (!data.length) { tb.innerHTML = filaVacia(6); return }
+  tb.innerHTML = data.map(p => `
+    <tr>
+      <td>${p.cliente_id}</td>
+      <td><strong>$${Number(p.monto).toFixed(2)}</strong></td>
+      <td>${p.concepto || '—'}</td>
+      <td>${p.metodo || '—'}</td>
+      <td style="color:var(--muted)">${new Date(p.fecha_hora).toLocaleString('es-EC')}</td>
+      <td>${btnDel('/pagos', p.id)}</td>
+    </tr>`).join('')
+}
+
+// ── ELIMINAR ──────────────────────────────────────────────────────────────────
+async function eliminar(endpoint, id) {
+  if (!confirm('¿Seguro que deseas eliminar este registro?')) return
+  try {
+    const res = await fetchConToken(`${endpoint}/${id}`, { method: 'DELETE' })
+    if (res.ok) { toast('Registro eliminado'); cargarTodo() }
+    else toast('Error al eliminar', '#a32d2d')
+  } catch { /* fetchConToken ya maneja el 401 */ }
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+
+const FORMS = {
+  guardavida: {
+    titulo: 'Guardavida',
+    endpoint: '/guardavidas',
+    campos: [
+      { label: 'Nombre completo', name: 'nombre', type: 'text', placeholder: 'Ej. Carlos Mendoza' },
+      { label: 'Turno', name: 'turno', type: 'select', opciones: ['mañana', 'tarde', 'noche'] },
+      { label: 'Certificado', name: 'certificado', type: 'text', placeholder: 'Cruz Roja Niv. 1' },
+      { label: 'Estado', name: 'activo', type: 'select', opciones: [
+        { value: 'true', label: 'Activo' }, { value: 'false', label: 'Inactivo' }
+      ] },
+    ]
+  },
+  incidente: {
+    titulo: 'Registrar incidente',
+    endpoint: '/incidentes',
+    campos: [
+      { label: 'Tipo', name: 'tipo', type: 'text', placeholder: 'Ej. Caída en borde' },
+      { label: 'Gravedad', name: 'gravedad', type: 'select', opciones: ['leve', 'moderado', 'grave'] },
+      { label: 'Descripción', name: 'descripcion', type: 'text', placeholder: 'Descripción breve del incidente' },
+      { label: 'Guardavida responsable', name: 'guardavida_id', type: 'dynamic-select', source: 'guardavidas' },
+      { label: 'Cliente involucrado (opcional)', name: 'cliente_id', type: 'dynamic-select', source: 'clientes', opcional: true },
+    ]
+  },
+  acceso: {
+    titulo: 'Registrar acceso de cliente',
+    endpoint: '/accesos',
+    campos: [
+      { label: 'Cliente', name: 'cliente_id', type: 'dynamic-select', source: 'clientes' },
+    ],
+    nota: '⚠️ El sistema verificará automáticamente si el cliente tiene pago de entrada registrado.'
+  },
+  equipo: {
+    titulo: 'Equipo',
+    endpoint: '/equipos',
+    campos: [
+      { label: 'Nombre', name: 'nombre', type: 'text', placeholder: 'Ej. Bomba filtro C' },
+      { label: 'Tipo', name: 'tipo', type: 'select', opciones: ['filtro', 'bomba', 'iluminacion', 'otro'] },
+      { label: 'Estado', name: 'estado', type: 'select', opciones: ['operativo', 'en reparacion', 'fuera de servicio'] },
+    ]
+  },
+  mantenimiento: {
+    titulo: 'Nuevo registro de mantenimiento',
+    endpoint: '/mantenimientos',
+    campos: [
+      { label: 'Equipo', name: 'equipo_id', type: 'dynamic-select', source: 'equipos' },
+      { label: 'Tipo', name: 'tipo', type: 'select', opciones: ['preventivo', 'correctivo'] },
+      { label: 'Descripción', name: 'descripcion', type: 'text', placeholder: 'Descripción del trabajo' },
+      { label: 'Realizado por', name: 'realizado_por', type: 'text', placeholder: 'Nombre del técnico' },
+      { label: 'Costo ($)', name: 'costo', type: 'number', placeholder: '0.00' },
+    ]
+  },
+  quimico: {
+    titulo: 'Producto químico',
+    endpoint: '/quimicos',
+    campos: [
+      { label: 'Nombre', name: 'nombre', type: 'text', placeholder: 'Ej. Cloro granulado' },
+      { label: 'Stock actual', name: 'stock_actual', type: 'number', placeholder: '0' },
+      { label: 'Unidad de medida', name: 'unidad_medida', type: 'select', opciones: ['kg', 'litros', 'unidades'] },
+      { label: 'Nivel mínimo', name: 'nivel_minimo', type: 'number', placeholder: '0' },
+    ],
+    nota: '💡 Para registrar consumo, resta la cantidad usada del "Stock actual" (ej. de 10 a 8 si se usaron 2).'
+  },
+  cliente: {
+    titulo: 'Nuevo cliente',
+    endpoint: '/clientes',
+    campos: [
+      { label: 'Nombre completo', name: 'nombre', type: 'text', placeholder: 'Ej. Ana Reyes' },
+      { label: 'Cédula', name: 'cedula', type: 'text', placeholder: '130XXXXXXX' },
+      { label: 'Email', name: 'email', type: 'text', placeholder: 'correo@ejemplo.com' },
+      { label: 'Teléfono', name: 'telefono', type: 'text', placeholder: '099XXXXXXX' },
+      { label: 'Membresía', name: 'membresia', type: 'select', opciones: ['ninguna', 'mensual', 'trimestral', 'anual'] },
+    ],
+    nota: 'ℹ️ Para que el cliente pueda ingresar, recuerda registrar su pago de "entrada" en la sección Pagos.'
+  },
+  reserva: {
+    titulo: 'Nueva reserva',
+    endpoint: '/reservas',
+    campos: [
+      { label: 'Cliente', name: 'cliente_id', type: 'dynamic-select', source: 'clientes' },
+      { label: 'Duración (minutos)', name: 'duracion', type: 'number', placeholder: '60' },
+      { label: 'Estado', name: 'estado', type: 'select', opciones: ['pendiente', 'confirmada', 'cancelada'] },
+    ]
+  },
+  pago: {
+    titulo: 'Registrar pago',
+    endpoint: '/pagos',
+    campos: [
+      { label: 'Cliente', name: 'cliente_id', type: 'dynamic-select', source: 'clientes' },
+      { label: 'Monto ($)', name: 'monto', type: 'number', placeholder: '0.00' },
+      { label: 'Concepto', name: 'concepto', type: 'select', opciones: ['entrada', 'membresia', 'reserva', 'otro'] },
+      { label: 'Método de pago', name: 'metodo', type: 'select', opciones: ['efectivo', 'transferencia'] },
+    ],
+    nota: '💡 Usa el concepto "entrada" para que el sistema autorice el ingreso del cliente.'
+  },
+}
+
+// Construye las <option> de un campo dynamic-select a partir de la lista
+// en cache correspondiente (_guardavidas, _clientes, _equipos...).
+function opcionesDinamicas(source, opcional, valorActual) {
+  const lista = CACHE[source] || []
+  let opts = opcional ? `<option value="0">— Ninguno —</option>` : ''
+  if (lista.length === 0) {
+    opts += `<option value="" disabled>No hay registros disponibles</option>`
+  }
+  opts += lista.map(item => {
+    const sel = (valorActual !== undefined && Number(valorActual) === item.id) ? 'selected' : ''
+    return `<option value="${item.id}" ${sel}>${item.nombre}</option>`
+  }).join('')
+  return opts
+}
+
+let modalActual = null
+let modalEditId = null   // si no es null, guardarModal hace PUT en vez de POST
+
+// openModal(type)              → modo crear
+// openModal(type, id)          → modo editar: busca el registro en cache y precarga el form
+function openModal(type, id) {
+  const form = FORMS[type]
+  if (!form) return
+  modalActual = type
+  modalEditId = id ?? null
+
+  let registro = null
+  if (modalEditId != null) {
+    const cacheMap = { guardavida: 'guardavidas', equipo: 'equipos', quimico: 'quimicos' }
+    const lista = CACHE[cacheMap[type]] || []
+    registro = lista.find(x => x.id === modalEditId)
+  }
+
+  document.getElementById('modalTitle').textContent =
+    modalEditId != null ? `Editar ${form.titulo.toLowerCase()}` : form.titulo
+
+  let html = form.campos.map(c => {
+    const valorActual = registro ? registro[c.name] : undefined
+
+    if (c.type === 'dynamic-select') {
+      return `<div class="modal-field"><label>${c.label}</label>
+        <select name="${c.name}">${opcionesDinamicas(c.source, c.opcional, valorActual)}</select></div>`
+    }
+    if (c.type === 'select') {
+      const opts = c.opciones.map(o => {
+        const value = typeof o === 'object' ? o.value : o
+        const label = typeof o === 'object' ? o.label : o
+        const sel = valorActual !== undefined && String(valorActual) === value ? 'selected' : ''
+        return `<option value="${value}" ${sel}>${label}</option>`
+      }).join('')
+      return `<div class="modal-field"><label>${c.label}</label><select name="${c.name}">${opts}</select></div>`
+    }
+    const val = valorActual !== undefined ? `value="${valorActual}"` : ''
+    return `<div class="modal-field"><label>${c.label}</label>
+      <input type="${c.type}" name="${c.name}" placeholder="${c.placeholder || ''}" ${val} /></div>`
+  }).join('')
+
+  if (form.nota) {
+    html += `<p style="font-size:12px; color:var(--muted); background:var(--bg); padding:8px 10px; border-radius:6px; margin-top:4px;">${form.nota}</p>`
+  }
+
+  document.getElementById('modalBody').innerHTML = html
+  document.getElementById('modal').classList.add('open')
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open')
+  modalActual = null
+  modalEditId = null
+}
+
+async function guardarModal() {
+  const form = FORMS[modalActual]
+  if (!form) return
+
+  const body = {}
+  form.campos.forEach(c => {
+    const el = document.querySelector(`#modalBody [name="${c.name}"]`)
+    if (!el) return
+
+    if (c.type === 'number' || c.type === 'dynamic-select') {
+      body[c.name] = el.value === '' ? 0 : Number(el.value)
+    } else if (c.type === 'select' && Array.isArray(c.opciones) && typeof c.opciones[0] === 'object') {
+      // selects de boolean (ej. activo: true/false) vienen como objetos {value, label}
+      body[c.name] = el.value === 'true'
+    } else {
+      body[c.name] = el.value
+    }
+  })
+
+  // Validación temprana en el frontend para los selects dinámicos obligatorios:
+  // si quedaron en 0 (placeholder "Ninguno" o lista vacía), avisamos antes de llamar a la API.
+  for (const c of form.campos) {
+    if (c.type === 'dynamic-select' && !c.opcional && (!body[c.name] || body[c.name] === 0)) {
+      toast(`Selecciona un valor para "${c.label}"`, '#a32d2d')
+      return
+    }
+  }
+
+  const editando = modalEditId != null
+  const url = editando ? `${form.endpoint}/${modalEditId}` : form.endpoint
+  const metodo = editando ? 'PUT' : 'POST'
+
+  try {
+    const res = await fetchConToken(url, {
+      method: metodo,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+
+    if (res.ok || res.status === 200) {
+      const data = await res.json()
+      closeModal()
+
+      if (modalActual === 'acceso') {
+        const alertEl = document.getElementById('accesoAlert')
+        if (data.autorizado) {
+          alertEl.className = 'acceso-alert autorizado'
+          alertEl.innerHTML = `<i class="ti ti-circle-check"></i> <strong>${data.nombre_cliente}</strong> — Acceso AUTORIZADO. Pago al día.`
+        } else {
+          alertEl.className = 'acceso-alert denegado'
+          alertEl.innerHTML = `<i class="ti ti-circle-x"></i> <strong>${data.nombre_cliente}</strong> — Acceso DENEGADO. ${data.motivo}`
+        }
+        alertEl.style.display = 'block'
+        setTimeout(() => { alertEl.style.display = 'none' }, 6000)
+      } else {
+        toast(editando ? 'Actualizado correctamente' : 'Guardado correctamente', '#0F6E56')
+      }
+
+      cargarTodo()
+    } else {
+      const data = await res.json().catch(() => ({}))
+      toast('Error: ' + (data.error || 'no se pudo guardar'), '#a32d2d')
+    }
+  } catch {
+    /* fetchConToken ya maneja el 401 */
+  }
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal() })
+
+</script>
+</body>
+</html>
