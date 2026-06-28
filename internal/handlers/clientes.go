@@ -12,7 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// ─── CLIENTE ─────────────────────────────────────────────────────────────────
+// CLIENTE
 
 func (s *Server) ListarClientes(w http.ResponseWriter, _ *http.Request) {
 	RespondJSON(w, http.StatusOK, s.Clientes.ListarClientes())
