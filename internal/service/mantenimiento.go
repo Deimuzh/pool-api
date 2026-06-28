@@ -21,7 +21,7 @@ func (s *MantenimientoService) ListarEquipos() []models.Equipo {
 	return s.repo.ListarEquipos()
 }
 
-func (s *MantenimientoService) ObtenerEquipo(id int) (models.Equipo, bool) {
+func (s *MantenimientoService) ObtenerEquipo(id uint) (models.Equipo, bool) {
 	return s.repo.BuscarEquipoPorID(id)
 }
 
@@ -35,7 +35,7 @@ func (s *MantenimientoService) CrearEquipo(e models.Equipo) (models.Equipo, erro
 	return s.repo.CrearEquipo(e), nil
 }
 
-func (s *MantenimientoService) ActualizarEquipo(id int, e models.Equipo) (models.Equipo, error) {
+func (s *MantenimientoService) ActualizarEquipo(id uint, e models.Equipo) (models.Equipo, error) {
 	if e.Nombre == "" || e.Tipo == "" {
 		return models.Equipo{}, ErrCampoObligatorio
 	}
@@ -46,7 +46,7 @@ func (s *MantenimientoService) ActualizarEquipo(id int, e models.Equipo) (models
 	return actualizado, nil
 }
 
-func (s *MantenimientoService) BorrarEquipo(id int) error {
+func (s *MantenimientoService) BorrarEquipo(id uint) error {
 	if !s.repo.BorrarEquipo(id) {
 		return ErrNoEncontrado
 	}
@@ -59,7 +59,7 @@ func (s *MantenimientoService) ListarRegistros() []models.RegistroMantenimiento 
 	return s.repo.ListarRegistros()
 }
 
-func (s *MantenimientoService) ObtenerRegistro(id int) (models.RegistroMantenimiento, bool) {
+func (s *MantenimientoService) ObtenerRegistro(id uint) (models.RegistroMantenimiento, bool) {
 	return s.repo.BuscarRegistroPorID(id)
 }
 
@@ -74,7 +74,7 @@ func (s *MantenimientoService) CrearRegistro(rm models.RegistroMantenimiento) (m
 	return s.repo.CrearRegistro(rm), nil
 }
 
-func (s *MantenimientoService) ActualizarRegistro(id int, rm models.RegistroMantenimiento) (models.RegistroMantenimiento, error) {
+func (s *MantenimientoService) ActualizarRegistro(id uint, rm models.RegistroMantenimiento) (models.RegistroMantenimiento, error) {
 	if rm.EquipoID == 0 || rm.Tipo == "" {
 		return models.RegistroMantenimiento{}, ErrCampoObligatorio
 	}
@@ -85,7 +85,7 @@ func (s *MantenimientoService) ActualizarRegistro(id int, rm models.RegistroMant
 	return actualizado, nil
 }
 
-func (s *MantenimientoService) BorrarRegistro(id int) error {
+func (s *MantenimientoService) BorrarRegistro(id uint) error {
 	if !s.repo.BorrarRegistro(id) {
 		return ErrNoEncontrado
 	}
@@ -98,7 +98,7 @@ func (s *MantenimientoService) ListarQuimicos() []models.ProductoQuimico {
 	return s.repo.ListarQuimicos()
 }
 
-func (s *MantenimientoService) ObtenerQuimico(id int) (models.ProductoQuimico, bool) {
+func (s *MantenimientoService) ObtenerQuimico(id uint) (models.ProductoQuimico, bool) {
 	return s.repo.BuscarQuimicoPorID(id)
 }
 
@@ -109,7 +109,7 @@ func (s *MantenimientoService) CrearQuimico(q models.ProductoQuimico) (models.Pr
 	return s.repo.CrearQuimico(q), nil
 }
 
-func (s *MantenimientoService) ActualizarQuimico(id int, q models.ProductoQuimico) (models.ProductoQuimico, error) {
+func (s *MantenimientoService) ActualizarQuimico(id uint, q models.ProductoQuimico) (models.ProductoQuimico, error) {
 	if q.Nombre == "" {
 		return models.ProductoQuimico{}, ErrNombreVacio
 	}
@@ -120,7 +120,7 @@ func (s *MantenimientoService) ActualizarQuimico(id int, q models.ProductoQuimic
 	return actualizado, nil
 }
 
-func (s *MantenimientoService) BorrarQuimico(id int) error {
+func (s *MantenimientoService) BorrarQuimico(id uint) error {
 	if !s.repo.BorrarQuimico(id) {
 		return ErrNoEncontrado
 	}
