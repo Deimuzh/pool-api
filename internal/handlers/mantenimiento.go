@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"piscina-comunitaria-api/internal/models"
-	"piscina-comunitaria-api/internal/storage"
+	"pool-api/internal/models"
+	"pool-api/internal/storage"
 
 	"github.com/go-chi/chi/v5"
 )

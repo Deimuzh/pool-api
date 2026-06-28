@@ -26,7 +26,7 @@ func (s *SeguridadService) ListarGuardavidas() []models.Guardavida {
 	return s.repo.ListarGuardavidas()
 }
 
-func (s *SeguridadService) ObtenerGuardavida(id int) (models.Guardavida, bool) {
+func (s *SeguridadService) ObtenerGuardavida(id uint) (models.Guardavida, bool) {
 	return s.repo.BuscarGuardavidaPorID(id)
 }
 
@@ -37,7 +37,7 @@ func (s *SeguridadService) CrearGuardavida(g models.Guardavida) (models.Guardavi
 	return s.repo.CrearGuardavida(g), nil
 }
 
-func (s *SeguridadService) ActualizarGuardavida(id int, g models.Guardavida) (models.Guardavida, error) {
+func (s *SeguridadService) ActualizarGuardavida(id uint, g models.Guardavida) (models.Guardavida, error) {
 	if g.Nombre == "" || g.Turno == "" {
 		return models.Guardavida{}, ErrCampoObligatorio
 	}
@@ -48,7 +48,7 @@ func (s *SeguridadService) ActualizarGuardavida(id int, g models.Guardavida) (mo
 	return actualizado, nil
 }
 
-func (s *SeguridadService) BorrarGuardavida(id int) error {
+func (s *SeguridadService) BorrarGuardavida(id uint) error {
 	if !s.repo.BorrarGuardavida(id) {
 		return ErrNoEncontrado
 	}
@@ -74,7 +74,7 @@ func (s *SeguridadService) ListarIncidentes() []IncidenteConNombre {
 	return resultado
 }
 
-func (s *SeguridadService) ObtenerIncidente(id int) (IncidenteConNombre, bool) {
+func (s *SeguridadService) ObtenerIncidente(id uint) (IncidenteConNombre, bool) {
 	inc, ok := s.repo.BuscarIncidentePorID(id)
 	if !ok {
 		return IncidenteConNombre{}, false
@@ -118,7 +118,7 @@ func (s *SeguridadService) CrearIncidente(inc models.Incidente) (IncidenteConNom
 	return s.enriquecerIncidente(creado), nil
 }
 
-func (s *SeguridadService) ActualizarIncidente(id int, inc models.Incidente) (IncidenteConNombre, error) {
+func (s *SeguridadService) ActualizarIncidente(id uint, inc models.Incidente) (IncidenteConNombre, error) {
 	if inc.Tipo == "" || inc.Gravedad == "" || inc.GuardavidaID == 0 {
 		return IncidenteConNombre{}, ErrCampoObligatorio
 	}
@@ -129,7 +129,7 @@ func (s *SeguridadService) ActualizarIncidente(id int, inc models.Incidente) (In
 	return s.enriquecerIncidente(actualizado), nil
 }
 
-func (s *SeguridadService) BorrarIncidente(id int) error {
+func (s *SeguridadService) BorrarIncidente(id uint) error {
 	if !s.repo.BorrarIncidente(id) {
 		return ErrNoEncontrado
 	}
@@ -170,7 +170,7 @@ func (s *SeguridadService) enriquecerAcceso(a models.AccesoCliente) AccesoConNom
 // CrearAcceso es la regla de negocio central de la vinculación Seguridad↔Clientes:
 // antes de autorizar el ingreso, verifica que el cliente exista y tenga un pago
 // de entrada registrado. Si no lo tiene, el acceso se guarda como NO autorizado.
-func (s *SeguridadService) CrearAcceso(clienteID int) (AccesoConNombre, error) {
+func (s *SeguridadService) CrearAcceso(clienteID uint) (AccesoConNombre, error) {
 	if clienteID == 0 {
 		return AccesoConNombre{}, ErrCampoObligatorio
 	}
@@ -196,7 +196,7 @@ func (s *SeguridadService) CrearAcceso(clienteID int) (AccesoConNombre, error) {
 	}, nil
 }
 
-func (s *SeguridadService) BorrarAcceso(id int) error {
+func (s *SeguridadService) BorrarAcceso(id uint) error {
 	if !s.repo.BorrarAcceso(id) {
 		return ErrNoEncontrado
 	}
