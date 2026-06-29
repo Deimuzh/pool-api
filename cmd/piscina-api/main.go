@@ -55,9 +55,9 @@ func main() {
 	// 5. Sirve el frontend (index.html) en la raíz. Sin proteger: el HTML
 	//    necesita cargar sin token para poder mostrar la pantalla de login.
 	r.Get("/", func(w http.ResponseWriter, _ *http.Request) {
-		html, err := os.ReadFile("./web/index.html")
+		html, err := os.ReadFile("../../web/index.html")
 		if err != nil {
-			http.Error(w, "No se encontró index.html en ./web/", http.StatusInternalServerError)
+			http.Error(w, "No se encontró index.html en ../../web/", http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
