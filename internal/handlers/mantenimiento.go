@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+//EQUIPOS
 func CrearEquipo(w http.ResponseWriter, r *http.Request) {
 	var eq models.Equipo
 
