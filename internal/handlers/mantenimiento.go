@@ -12,7 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-//EQUIPOS DE MANTENIMIENTO
+//EQUIPOS DE MANTENIMIENTO 
 func CrearEquipo(w http.ResponseWriter, r *http.Request) {
 	var eq models.Equipo
 
