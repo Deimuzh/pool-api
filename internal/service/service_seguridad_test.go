@@ -21,24 +21,30 @@ type mockSeguridadRepo struct {
 	accesoRecibido     models.AccesoCliente
 }
 
-func (m *mockSeguridadRepo) ListarGuardavidas() []models.Guardavida                  { return nil }
-func (m *mockSeguridadRepo) BuscarGuardavidaPorID(id int) (models.Guardavida, bool)  { return models.Guardavida{}, false }
-func (m *mockSeguridadRepo) CrearGuardavida(g models.Guardavida) models.Guardavida   { return g }
-func (m *mockSeguridadRepo) ActualizarGuardavida(id int, datos models.Guardavida) (models.Guardavida, bool) {
+func (m *mockSeguridadRepo) ListarGuardavidas() []models.Guardavida { return nil }
+func (m *mockSeguridadRepo) BuscarGuardavidaPorID(id uint) (models.Guardavida, bool) {
 	return models.Guardavida{}, false
 }
-func (m *mockSeguridadRepo) BorrarGuardavida(id int) bool { return false }
+func (m *mockSeguridadRepo) CrearGuardavida(g models.Guardavida) models.Guardavida { return g }
+func (m *mockSeguridadRepo) ActualizarGuardavida(id uint, datos models.Guardavida) (models.Guardavida, bool) {
+	return models.Guardavida{}, false
+}
+func (m *mockSeguridadRepo) BorrarGuardavida(id uint) bool { return false }
 
-func (m *mockSeguridadRepo) ListarIncidentes() []models.Incidente                 { return nil }
-func (m *mockSeguridadRepo) BuscarIncidentePorID(id int) (models.Incidente, bool) { return models.Incidente{}, false }
-func (m *mockSeguridadRepo) CrearIncidente(i models.Incidente) models.Incidente   { return i }
-func (m *mockSeguridadRepo) ActualizarIncidente(id int, datos models.Incidente) (models.Incidente, bool) {
+func (m *mockSeguridadRepo) ListarIncidentes() []models.Incidente { return nil }
+func (m *mockSeguridadRepo) BuscarIncidentePorID(id uint) (models.Incidente, bool) {
 	return models.Incidente{}, false
 }
-func (m *mockSeguridadRepo) BorrarIncidente(id int) bool { return false }
+func (m *mockSeguridadRepo) CrearIncidente(i models.Incidente) models.Incidente { return i }
+func (m *mockSeguridadRepo) ActualizarIncidente(id uint, datos models.Incidente) (models.Incidente, bool) {
+	return models.Incidente{}, false
+}
+func (m *mockSeguridadRepo) BorrarIncidente(id uint) bool { return false }
 
-func (m *mockSeguridadRepo) ListarAccesos() []models.AccesoCliente                 { return nil }
-func (m *mockSeguridadRepo) BuscarAccesoPorID(id int) (models.AccesoCliente, bool) { return models.AccesoCliente{}, false }
+func (m *mockSeguridadRepo) ListarAccesos() []models.AccesoCliente { return nil }
+func (m *mockSeguridadRepo) BuscarAccesoPorID(id uint) (models.AccesoCliente, bool) {
+	return models.AccesoCliente{}, false
+}
 
 // CrearAcceso es el único método que de verdad importa: guarda lo que el
 // service le mandó, para que el test pueda revisar el campo Autorizado.
@@ -48,27 +54,27 @@ func (m *mockSeguridadRepo) CrearAcceso(a models.AccesoCliente) models.AccesoCli
 	a.ID = 1
 	return a
 }
-func (m *mockSeguridadRepo) ActualizarAcceso(id int, datos models.AccesoCliente) (models.AccesoCliente, bool) {
+func (m *mockSeguridadRepo) ActualizarAcceso(id uint, datos models.AccesoCliente) (models.AccesoCliente, bool) {
 	return models.AccesoCliente{}, false
 }
-func (m *mockSeguridadRepo) BorrarAcceso(id int) bool { return false }
+func (m *mockSeguridadRepo) BorrarAcceso(id uint) bool { return false }
 
 // mockClienteRepo es un mock de storage.ClienteRepository: solo necesitamos
 // BuscarClientePorID para que CrearAcceso pueda validar que el cliente existe.
 type mockClienteRepo struct {
-	clientes map[int]models.Cliente
+	clientes map[uint]models.Cliente
 }
 
 func (m *mockClienteRepo) ListarClientes() []models.Cliente { return nil }
-func (m *mockClienteRepo) BuscarClientePorID(id int) (models.Cliente, bool) {
+func (m *mockClienteRepo) BuscarClientePorID(id uint) (models.Cliente, bool) {
 	c, ok := m.clientes[id]
 	return c, ok
 }
 func (m *mockClienteRepo) CrearCliente(c models.Cliente) models.Cliente { return c }
-func (m *mockClienteRepo) ActualizarCliente(id int, datos models.Cliente) (models.Cliente, bool) {
+func (m *mockClienteRepo) ActualizarCliente(id uint, datos models.Cliente) (models.Cliente, bool) {
 	return models.Cliente{}, false
 }
-func (m *mockClienteRepo) BorrarCliente(id int) bool { return false }
+func (m *mockClienteRepo) BorrarCliente(id uint) bool { return false }
 
 // mockPagoRepo es un mock de storage.PagoRepository: lo que de verdad
 // controla este test es ClienteTienePagoEntrada, que devolvemos fijo en false
@@ -77,14 +83,14 @@ type mockPagoRepo struct {
 	tienePago bool
 }
 
-func (m *mockPagoRepo) ListarPagos() []models.Pago                 { return nil }
-func (m *mockPagoRepo) BuscarPagoPorID(id int) (models.Pago, bool) { return models.Pago{}, false }
-func (m *mockPagoRepo) CrearPago(p models.Pago) models.Pago        { return p }
-func (m *mockPagoRepo) ActualizarPago(id int, datos models.Pago) (models.Pago, bool) {
+func (m *mockPagoRepo) ListarPagos() []models.Pago                  { return nil }
+func (m *mockPagoRepo) BuscarPagoPorID(id uint) (models.Pago, bool) { return models.Pago{}, false }
+func (m *mockPagoRepo) CrearPago(p models.Pago) models.Pago         { return p }
+func (m *mockPagoRepo) ActualizarPago(id uint, datos models.Pago) (models.Pago, bool) {
 	return models.Pago{}, false
 }
-func (m *mockPagoRepo) BorrarPago(id int) bool { return false }
-func (m *mockPagoRepo) ClienteTienePagoEntrada(clienteID int) bool {
+func (m *mockPagoRepo) BorrarPago(id uint) bool { return false }
+func (m *mockPagoRepo) ClienteTienePagoEntrada(clienteID uint) bool {
 	return m.tienePago
 }
 
@@ -99,7 +105,7 @@ func (m *mockPagoRepo) ClienteTienePagoEntrada(clienteID int) bool {
 func TestCrearAcceso_SinPagoNoAutoriza(t *testing.T) {
 	repo := &mockSeguridadRepo{}
 	clientes := &mockClienteRepo{
-		clientes: map[int]models.Cliente{
+		clientes: map[uint]models.Cliente{
 			2: {ID: 2, Nombre: "Luis Pino"},
 		},
 	}
@@ -134,7 +140,7 @@ func TestCrearAcceso_SinPagoNoAutoriza(t *testing.T) {
 // para un cliente fantasma y crearAccesoLlamado terminaría en true.
 func TestCrearAcceso_ClienteInexistenteNoLlegaAlRepo(t *testing.T) {
 	repo := &mockSeguridadRepo{}
-	clientes := &mockClienteRepo{clientes: map[int]models.Cliente{}} // sin clientes
+	clientes := &mockClienteRepo{clientes: map[uint]models.Cliente{}} // sin clientes
 	pagos := &mockPagoRepo{tienePago: true}
 
 	svc := NewSeguridadService(repo, clientes, pagos)

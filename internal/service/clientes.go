@@ -20,7 +20,7 @@ func (s *ClientesService) ListarClientes() []models.Cliente {
 	return s.repo.ListarClientes()
 }
 
-func (s *ClientesService) ObtenerCliente(id int) (models.Cliente, bool) {
+func (s *ClientesService) ObtenerCliente(id uint) (models.Cliente, bool) {
 	return s.repo.BuscarClientePorID(id)
 }
 
@@ -34,7 +34,7 @@ func (s *ClientesService) CrearCliente(c models.Cliente) (models.Cliente, error)
 	return s.repo.CrearCliente(c), nil
 }
 
-func (s *ClientesService) ActualizarCliente(id int, c models.Cliente) (models.Cliente, error) {
+func (s *ClientesService) ActualizarCliente(id uint, c models.Cliente) (models.Cliente, error) {
 	if c.Nombre == "" || c.Cedula == "" {
 		return models.Cliente{}, ErrCampoObligatorio
 	}
@@ -45,7 +45,7 @@ func (s *ClientesService) ActualizarCliente(id int, c models.Cliente) (models.Cl
 	return actualizado, nil
 }
 
-func (s *ClientesService) BorrarCliente(id int) error {
+func (s *ClientesService) BorrarCliente(id uint) error {
 	if !s.repo.BorrarCliente(id) {
 		return ErrNoEncontrado
 	}
@@ -58,7 +58,7 @@ func (s *ClientesService) ListarReservas() []models.Reserva {
 	return s.repo.ListarReservas()
 }
 
-func (s *ClientesService) ObtenerReserva(id int) (models.Reserva, bool) {
+func (s *ClientesService) ObtenerReserva(id uint) (models.Reserva, bool) {
 	return s.repo.BuscarReservaPorID(id)
 }
 
@@ -75,7 +75,7 @@ func (s *ClientesService) CrearReserva(rv models.Reserva) (models.Reserva, error
 	return s.repo.CrearReserva(rv), nil
 }
 
-func (s *ClientesService) ActualizarReserva(id int, rv models.Reserva) (models.Reserva, error) {
+func (s *ClientesService) ActualizarReserva(id uint, rv models.Reserva) (models.Reserva, error) {
 	if rv.ClienteID == 0 {
 		return models.Reserva{}, ErrCampoObligatorio
 	}
@@ -86,7 +86,7 @@ func (s *ClientesService) ActualizarReserva(id int, rv models.Reserva) (models.R
 	return actualizado, nil
 }
 
-func (s *ClientesService) BorrarReserva(id int) error {
+func (s *ClientesService) BorrarReserva(id uint) error {
 	if !s.repo.BorrarReserva(id) {
 		return ErrNoEncontrado
 	}
@@ -99,7 +99,7 @@ func (s *ClientesService) ListarPagos() []models.Pago {
 	return s.repo.ListarPagos()
 }
 
-func (s *ClientesService) ObtenerPago(id int) (models.Pago, bool) {
+func (s *ClientesService) ObtenerPago(id uint) (models.Pago, bool) {
 	return s.repo.BuscarPagoPorID(id)
 }
 
@@ -116,7 +116,7 @@ func (s *ClientesService) CrearPago(p models.Pago) (models.Pago, error) {
 	return s.repo.CrearPago(p), nil
 }
 
-func (s *ClientesService) ActualizarPago(id int, p models.Pago) (models.Pago, error) {
+func (s *ClientesService) ActualizarPago(id uint, p models.Pago) (models.Pago, error) {
 	if p.ClienteID == 0 || p.Monto <= 0 {
 		return models.Pago{}, ErrCampoObligatorio
 	}
@@ -127,7 +127,7 @@ func (s *ClientesService) ActualizarPago(id int, p models.Pago) (models.Pago, er
 	return actualizado, nil
 }
 
-func (s *ClientesService) BorrarPago(id int) error {
+func (s *ClientesService) BorrarPago(id uint) error {
 	if !s.repo.BorrarPago(id) {
 		return ErrNoEncontrado
 	}

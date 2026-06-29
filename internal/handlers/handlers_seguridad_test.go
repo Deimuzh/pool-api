@@ -24,11 +24,11 @@ import (
 
 type fakeSeguridadRepo struct {
 	guardavidas []models.Guardavida
-	siguienteID int
+	siguienteID uint
 }
 
 func (f *fakeSeguridadRepo) ListarGuardavidas() []models.Guardavida { return f.guardavidas }
-func (f *fakeSeguridadRepo) BuscarGuardavidaPorID(id int) (models.Guardavida, bool) {
+func (f *fakeSeguridadRepo) BuscarGuardavidaPorID(id uint) (models.Guardavida, bool) {
 	for _, g := range f.guardavidas {
 		if g.ID == id {
 			return g, true
@@ -42,50 +42,56 @@ func (f *fakeSeguridadRepo) CrearGuardavida(g models.Guardavida) models.Guardavi
 	f.guardavidas = append(f.guardavidas, g)
 	return g
 }
-func (f *fakeSeguridadRepo) ActualizarGuardavida(id int, datos models.Guardavida) (models.Guardavida, bool) {
+func (f *fakeSeguridadRepo) ActualizarGuardavida(id uint, datos models.Guardavida) (models.Guardavida, bool) {
 	return models.Guardavida{}, false
 }
-func (f *fakeSeguridadRepo) BorrarGuardavida(id int) bool { return false }
+func (f *fakeSeguridadRepo) BorrarGuardavida(id uint) bool { return false }
 
-func (f *fakeSeguridadRepo) ListarIncidentes() []models.Incidente                 { return nil }
-func (f *fakeSeguridadRepo) BuscarIncidentePorID(id int) (models.Incidente, bool) { return models.Incidente{}, false }
-func (f *fakeSeguridadRepo) CrearIncidente(i models.Incidente) models.Incidente   { return i }
-func (f *fakeSeguridadRepo) ActualizarIncidente(id int, datos models.Incidente) (models.Incidente, bool) {
+func (f *fakeSeguridadRepo) ListarIncidentes() []models.Incidente { return nil }
+func (f *fakeSeguridadRepo) BuscarIncidentePorID(id uint) (models.Incidente, bool) {
 	return models.Incidente{}, false
 }
-func (f *fakeSeguridadRepo) BorrarIncidente(id int) bool { return false }
+func (f *fakeSeguridadRepo) CrearIncidente(i models.Incidente) models.Incidente { return i }
+func (f *fakeSeguridadRepo) ActualizarIncidente(id uint, datos models.Incidente) (models.Incidente, bool) {
+	return models.Incidente{}, false
+}
+func (f *fakeSeguridadRepo) BorrarIncidente(id uint) bool { return false }
 
-func (f *fakeSeguridadRepo) ListarAccesos() []models.AccesoCliente                 { return nil }
-func (f *fakeSeguridadRepo) BuscarAccesoPorID(id int) (models.AccesoCliente, bool) { return models.AccesoCliente{}, false }
-func (f *fakeSeguridadRepo) CrearAcceso(a models.AccesoCliente) models.AccesoCliente { return a }
-func (f *fakeSeguridadRepo) ActualizarAcceso(id int, datos models.AccesoCliente) (models.AccesoCliente, bool) {
+func (f *fakeSeguridadRepo) ListarAccesos() []models.AccesoCliente { return nil }
+func (f *fakeSeguridadRepo) BuscarAccesoPorID(id uint) (models.AccesoCliente, bool) {
 	return models.AccesoCliente{}, false
 }
-func (f *fakeSeguridadRepo) BorrarAcceso(id int) bool { return false }
+func (f *fakeSeguridadRepo) CrearAcceso(a models.AccesoCliente) models.AccesoCliente { return a }
+func (f *fakeSeguridadRepo) ActualizarAcceso(id uint, datos models.AccesoCliente) (models.AccesoCliente, bool) {
+	return models.AccesoCliente{}, false
+}
+func (f *fakeSeguridadRepo) BorrarAcceso(id uint) bool { return false }
 
 // fakeClienteRepo y fakePagoRepo: SeguridadService los necesita para
 // construirse, pero estos tests de Guardavida no los usan, así que basta
 // con que implementen la interfaz sin hacer nada relevante.
 type fakeClienteRepo struct{}
 
-func (f *fakeClienteRepo) ListarClientes() []models.Cliente                  { return nil }
-func (f *fakeClienteRepo) BuscarClientePorID(id int) (models.Cliente, bool)  { return models.Cliente{}, false }
-func (f *fakeClienteRepo) CrearCliente(c models.Cliente) models.Cliente      { return c }
-func (f *fakeClienteRepo) ActualizarCliente(id int, datos models.Cliente) (models.Cliente, bool) {
+func (f *fakeClienteRepo) ListarClientes() []models.Cliente { return nil }
+func (f *fakeClienteRepo) BuscarClientePorID(id uint) (models.Cliente, bool) {
 	return models.Cliente{}, false
 }
-func (f *fakeClienteRepo) BorrarCliente(id int) bool { return false }
+func (f *fakeClienteRepo) CrearCliente(c models.Cliente) models.Cliente { return c }
+func (f *fakeClienteRepo) ActualizarCliente(id uint, datos models.Cliente) (models.Cliente, bool) {
+	return models.Cliente{}, false
+}
+func (f *fakeClienteRepo) BorrarCliente(id uint) bool { return false }
 
 type fakePagoRepo struct{}
 
-func (f *fakePagoRepo) ListarPagos() []models.Pago                 { return nil }
-func (f *fakePagoRepo) BuscarPagoPorID(id int) (models.Pago, bool) { return models.Pago{}, false }
-func (f *fakePagoRepo) CrearPago(p models.Pago) models.Pago        { return p }
-func (f *fakePagoRepo) ActualizarPago(id int, datos models.Pago) (models.Pago, bool) {
+func (f *fakePagoRepo) ListarPagos() []models.Pago                  { return nil }
+func (f *fakePagoRepo) BuscarPagoPorID(id uint) (models.Pago, bool) { return models.Pago{}, false }
+func (f *fakePagoRepo) CrearPago(p models.Pago) models.Pago         { return p }
+func (f *fakePagoRepo) ActualizarPago(id uint, datos models.Pago) (models.Pago, bool) {
 	return models.Pago{}, false
 }
-func (f *fakePagoRepo) BorrarPago(id int) bool                          { return false }
-func (f *fakePagoRepo) ClienteTienePagoEntrada(clienteID int) bool      { return false }
+func (f *fakePagoRepo) BorrarPago(id uint) bool                     { return false }
+func (f *fakePagoRepo) ClienteTienePagoEntrada(clienteID uint) bool { return false }
 
 // fakeUsuarioRepo permite generar un JWT real vía AuthService.Login, igual
 // que en producción, sin tocar una base de datos.
@@ -94,7 +100,7 @@ type fakeUsuarioRepo struct {
 }
 
 func (f *fakeUsuarioRepo) ListarUsuarios() []models.Usuario { return []models.Usuario{f.usuario} }
-func (f *fakeUsuarioRepo) BuscarUsuarioPorID(id int) (models.Usuario, bool) {
+func (f *fakeUsuarioRepo) BuscarUsuarioPorID(id uint) (models.Usuario, bool) {
 	if id == f.usuario.ID {
 		return f.usuario, true
 	}
@@ -107,10 +113,10 @@ func (f *fakeUsuarioRepo) BuscarUsuarioPorEmail(email string) (models.Usuario, b
 	return models.Usuario{}, false
 }
 func (f *fakeUsuarioRepo) CrearUsuario(u models.Usuario) (models.Usuario, error) { return u, nil }
-func (f *fakeUsuarioRepo) ActualizarUsuario(id int, datos models.Usuario) (models.Usuario, bool) {
+func (f *fakeUsuarioRepo) ActualizarUsuario(id uint, datos models.Usuario) (models.Usuario, bool) {
 	return models.Usuario{}, false
 }
-func (f *fakeUsuarioRepo) BorrarUsuario(id int) bool { return false }
+func (f *fakeUsuarioRepo) BorrarUsuario(id uint) bool { return false }
 
 // ─── SETUP COMÚN ────────────────────────────────────────────────────────────
 

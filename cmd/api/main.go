@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"piscina-comunitaria-api/internal/router"
-	"piscina-comunitaria-api/internal/storage"
+	"pool-api/internal/router"
+	"pool-api/internal/storage"
 )
 
 func main() {

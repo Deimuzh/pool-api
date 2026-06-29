@@ -32,7 +32,7 @@ func (a *AlmacenSQLite) ListarGuardavidas() []models.Guardavida {
 	return lista
 }
 
-func (a *AlmacenSQLite) BuscarGuardavidaPorID(id int) (models.Guardavida, bool) {
+func (a *AlmacenSQLite) BuscarGuardavidaPorID(id uint) (models.Guardavida, bool) {
 	var g models.Guardavida
 	if err := a.db.First(&g, id).Error; err != nil {
 		return models.Guardavida{}, false
@@ -46,7 +46,7 @@ func (a *AlmacenSQLite) CrearGuardavida(g models.Guardavida) models.Guardavida {
 	return g
 }
 
-func (a *AlmacenSQLite) ActualizarGuardavida(id int, datos models.Guardavida) (models.Guardavida, bool) {
+func (a *AlmacenSQLite) ActualizarGuardavida(id uint, datos models.Guardavida) (models.Guardavida, bool) {
 	var existente models.Guardavida
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.Guardavida{}, false
@@ -57,7 +57,7 @@ func (a *AlmacenSQLite) ActualizarGuardavida(id int, datos models.Guardavida) (m
 	return datos, true
 }
 
-func (a *AlmacenSQLite) BorrarGuardavida(id int) bool {
+func (a *AlmacenSQLite) BorrarGuardavida(id uint) bool {
 	res := a.db.Delete(&models.Guardavida{}, id)
 	return res.RowsAffected > 0
 }
@@ -72,7 +72,7 @@ func (a *AlmacenSQLite) ListarIncidentes() []models.Incidente {
 	return lista
 }
 
-func (a *AlmacenSQLite) BuscarIncidentePorID(id int) (models.Incidente, bool) {
+func (a *AlmacenSQLite) BuscarIncidentePorID(id uint) (models.Incidente, bool) {
 	var i models.Incidente
 	if err := a.db.First(&i, id).Error; err != nil {
 		return models.Incidente{}, false
@@ -86,7 +86,7 @@ func (a *AlmacenSQLite) CrearIncidente(i models.Incidente) models.Incidente {
 	return i
 }
 
-func (a *AlmacenSQLite) ActualizarIncidente(id int, datos models.Incidente) (models.Incidente, bool) {
+func (a *AlmacenSQLite) ActualizarIncidente(id uint, datos models.Incidente) (models.Incidente, bool) {
 	var existente models.Incidente
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.Incidente{}, false
@@ -97,7 +97,7 @@ func (a *AlmacenSQLite) ActualizarIncidente(id int, datos models.Incidente) (mod
 	return datos, true
 }
 
-func (a *AlmacenSQLite) BorrarIncidente(id int) bool {
+func (a *AlmacenSQLite) BorrarIncidente(id uint) bool {
 	res := a.db.Delete(&models.Incidente{}, id)
 	return res.RowsAffected > 0
 }
@@ -112,7 +112,7 @@ func (a *AlmacenSQLite) ListarAccesos() []models.AccesoCliente {
 	return lista
 }
 
-func (a *AlmacenSQLite) BuscarAccesoPorID(id int) (models.AccesoCliente, bool) {
+func (a *AlmacenSQLite) BuscarAccesoPorID(id uint) (models.AccesoCliente, bool) {
 	var acc models.AccesoCliente
 	if err := a.db.First(&acc, id).Error; err != nil {
 		return models.AccesoCliente{}, false
@@ -126,7 +126,7 @@ func (a *AlmacenSQLite) CrearAcceso(acc models.AccesoCliente) models.AccesoClien
 	return acc
 }
 
-func (a *AlmacenSQLite) ActualizarAcceso(id int, datos models.AccesoCliente) (models.AccesoCliente, bool) {
+func (a *AlmacenSQLite) ActualizarAcceso(id uint, datos models.AccesoCliente) (models.AccesoCliente, bool) {
 	var existente models.AccesoCliente
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.AccesoCliente{}, false
@@ -137,7 +137,7 @@ func (a *AlmacenSQLite) ActualizarAcceso(id int, datos models.AccesoCliente) (mo
 	return datos, true
 }
 
-func (a *AlmacenSQLite) BorrarAcceso(id int) bool {
+func (a *AlmacenSQLite) BorrarAcceso(id uint) bool {
 	res := a.db.Delete(&models.AccesoCliente{}, id)
 	return res.RowsAffected > 0
 }
@@ -152,7 +152,7 @@ func (a *AlmacenSQLite) ListarEquipos() []models.Equipo {
 	return lista
 }
 
-func (a *AlmacenSQLite) BuscarEquipoPorID(id int) (models.Equipo, bool) {
+func (a *AlmacenSQLite) BuscarEquipoPorID(id uint) (models.Equipo, bool) {
 	var e models.Equipo
 	if err := a.db.First(&e, id).Error; err != nil {
 		return models.Equipo{}, false
@@ -165,7 +165,7 @@ func (a *AlmacenSQLite) CrearEquipo(e models.Equipo) models.Equipo {
 	return e
 }
 
-func (a *AlmacenSQLite) ActualizarEquipo(id int, datos models.Equipo) (models.Equipo, bool) {
+func (a *AlmacenSQLite) ActualizarEquipo(id uint, datos models.Equipo) (models.Equipo, bool) {
 	var existente models.Equipo
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.Equipo{}, false
@@ -175,7 +175,7 @@ func (a *AlmacenSQLite) ActualizarEquipo(id int, datos models.Equipo) (models.Eq
 	return datos, true
 }
 
-func (a *AlmacenSQLite) BorrarEquipo(id int) bool {
+func (a *AlmacenSQLite) BorrarEquipo(id uint) bool {
 	res := a.db.Delete(&models.Equipo{}, id)
 	return res.RowsAffected > 0
 }
@@ -190,7 +190,7 @@ func (a *AlmacenSQLite) ListarRegistros() []models.RegistroMantenimiento {
 	return lista
 }
 
-func (a *AlmacenSQLite) BuscarRegistroPorID(id int) (models.RegistroMantenimiento, bool) {
+func (a *AlmacenSQLite) BuscarRegistroPorID(id uint) (models.RegistroMantenimiento, bool) {
 	var rm models.RegistroMantenimiento
 	if err := a.db.First(&rm, id).Error; err != nil {
 		return models.RegistroMantenimiento{}, false
@@ -204,7 +204,7 @@ func (a *AlmacenSQLite) CrearRegistro(rm models.RegistroMantenimiento) models.Re
 	return rm
 }
 
-func (a *AlmacenSQLite) ActualizarRegistro(id int, datos models.RegistroMantenimiento) (models.RegistroMantenimiento, bool) {
+func (a *AlmacenSQLite) ActualizarRegistro(id uint, datos models.RegistroMantenimiento) (models.RegistroMantenimiento, bool) {
 	var existente models.RegistroMantenimiento
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.RegistroMantenimiento{}, false
@@ -215,7 +215,7 @@ func (a *AlmacenSQLite) ActualizarRegistro(id int, datos models.RegistroMantenim
 	return datos, true
 }
 
-func (a *AlmacenSQLite) BorrarRegistro(id int) bool {
+func (a *AlmacenSQLite) BorrarRegistro(id uint) bool {
 	res := a.db.Delete(&models.RegistroMantenimiento{}, id)
 	return res.RowsAffected > 0
 }
@@ -230,7 +230,7 @@ func (a *AlmacenSQLite) ListarQuimicos() []models.ProductoQuimico {
 	return lista
 }
 
-func (a *AlmacenSQLite) BuscarQuimicoPorID(id int) (models.ProductoQuimico, bool) {
+func (a *AlmacenSQLite) BuscarQuimicoPorID(id uint) (models.ProductoQuimico, bool) {
 	var q models.ProductoQuimico
 	if err := a.db.First(&q, id).Error; err != nil {
 		return models.ProductoQuimico{}, false
@@ -243,7 +243,7 @@ func (a *AlmacenSQLite) CrearQuimico(q models.ProductoQuimico) models.ProductoQu
 	return q
 }
 
-func (a *AlmacenSQLite) ActualizarQuimico(id int, datos models.ProductoQuimico) (models.ProductoQuimico, bool) {
+func (a *AlmacenSQLite) ActualizarQuimico(id uint, datos models.ProductoQuimico) (models.ProductoQuimico, bool) {
 	var existente models.ProductoQuimico
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.ProductoQuimico{}, false
@@ -253,7 +253,7 @@ func (a *AlmacenSQLite) ActualizarQuimico(id int, datos models.ProductoQuimico) 
 	return datos, true
 }
 
-func (a *AlmacenSQLite) BorrarQuimico(id int) bool {
+func (a *AlmacenSQLite) BorrarQuimico(id uint) bool {
 	res := a.db.Delete(&models.ProductoQuimico{}, id)
 	return res.RowsAffected > 0
 }
@@ -268,7 +268,7 @@ func (a *AlmacenSQLite) ListarClientes() []models.Cliente {
 	return lista
 }
 
-func (a *AlmacenSQLite) BuscarClientePorID(id int) (models.Cliente, bool) {
+func (a *AlmacenSQLite) BuscarClientePorID(id uint) (models.Cliente, bool) {
 	var c models.Cliente
 	if err := a.db.First(&c, id).Error; err != nil {
 		return models.Cliente{}, false
@@ -282,7 +282,7 @@ func (a *AlmacenSQLite) CrearCliente(c models.Cliente) models.Cliente {
 	return c
 }
 
-func (a *AlmacenSQLite) ActualizarCliente(id int, datos models.Cliente) (models.Cliente, bool) {
+func (a *AlmacenSQLite) ActualizarCliente(id uint, datos models.Cliente) (models.Cliente, bool) {
 	var existente models.Cliente
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.Cliente{}, false
@@ -293,7 +293,7 @@ func (a *AlmacenSQLite) ActualizarCliente(id int, datos models.Cliente) (models.
 	return datos, true
 }
 
-func (a *AlmacenSQLite) BorrarCliente(id int) bool {
+func (a *AlmacenSQLite) BorrarCliente(id uint) bool {
 	res := a.db.Delete(&models.Cliente{}, id)
 	return res.RowsAffected > 0
 }
@@ -308,7 +308,7 @@ func (a *AlmacenSQLite) ListarReservas() []models.Reserva {
 	return lista
 }
 
-func (a *AlmacenSQLite) BuscarReservaPorID(id int) (models.Reserva, bool) {
+func (a *AlmacenSQLite) BuscarReservaPorID(id uint) (models.Reserva, bool) {
 	var rv models.Reserva
 	if err := a.db.First(&rv, id).Error; err != nil {
 		return models.Reserva{}, false
@@ -322,7 +322,7 @@ func (a *AlmacenSQLite) CrearReserva(rv models.Reserva) models.Reserva {
 	return rv
 }
 
-func (a *AlmacenSQLite) ActualizarReserva(id int, datos models.Reserva) (models.Reserva, bool) {
+func (a *AlmacenSQLite) ActualizarReserva(id uint, datos models.Reserva) (models.Reserva, bool) {
 	var existente models.Reserva
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.Reserva{}, false
@@ -333,7 +333,7 @@ func (a *AlmacenSQLite) ActualizarReserva(id int, datos models.Reserva) (models.
 	return datos, true
 }
 
-func (a *AlmacenSQLite) BorrarReserva(id int) bool {
+func (a *AlmacenSQLite) BorrarReserva(id uint) bool {
 	res := a.db.Delete(&models.Reserva{}, id)
 	return res.RowsAffected > 0
 }
@@ -348,7 +348,7 @@ func (a *AlmacenSQLite) ListarPagos() []models.Pago {
 	return lista
 }
 
-func (a *AlmacenSQLite) BuscarPagoPorID(id int) (models.Pago, bool) {
+func (a *AlmacenSQLite) BuscarPagoPorID(id uint) (models.Pago, bool) {
 	var p models.Pago
 	if err := a.db.First(&p, id).Error; err != nil {
 		return models.Pago{}, false
@@ -362,7 +362,7 @@ func (a *AlmacenSQLite) CrearPago(p models.Pago) models.Pago {
 	return p
 }
 
-func (a *AlmacenSQLite) ActualizarPago(id int, datos models.Pago) (models.Pago, bool) {
+func (a *AlmacenSQLite) ActualizarPago(id uint, datos models.Pago) (models.Pago, bool) {
 	var existente models.Pago
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.Pago{}, false
@@ -373,7 +373,7 @@ func (a *AlmacenSQLite) ActualizarPago(id int, datos models.Pago) (models.Pago, 
 	return datos, true
 }
 
-func (a *AlmacenSQLite) BorrarPago(id int) bool {
+func (a *AlmacenSQLite) BorrarPago(id uint) bool {
 	res := a.db.Delete(&models.Pago{}, id)
 	return res.RowsAffected > 0
 }
@@ -381,7 +381,7 @@ func (a *AlmacenSQLite) BorrarPago(id int) bool {
 // ClienteTienePagoEntrada verifica si el cliente tiene al menos un pago
 // con concepto "entrada" registrado. Lo usa el service de Seguridad para
 // decidir si autoriza el acceso, sin acoplarse a la tabla Pago.
-func (a *AlmacenSQLite) ClienteTienePagoEntrada(clienteID int) bool {
+func (a *AlmacenSQLite) ClienteTienePagoEntrada(clienteID uint) bool {
 	var count int64
 	a.db.Model(&models.Pago{}).
 		Where("cliente_id = ? AND concepto = ?", clienteID, "entrada").
@@ -399,7 +399,7 @@ func (a *AlmacenSQLite) ListarUsuarios() []models.Usuario {
 	return lista
 }
 
-func (a *AlmacenSQLite) BuscarUsuarioPorID(id int) (models.Usuario, bool) {
+func (a *AlmacenSQLite) BuscarUsuarioPorID(id uint) (models.Usuario, bool) {
 	var u models.Usuario
 	if err := a.db.First(&u, id).Error; err != nil {
 		return models.Usuario{}, false
@@ -423,7 +423,7 @@ func (a *AlmacenSQLite) CrearUsuario(u models.Usuario) (models.Usuario, error) {
 	return u, nil
 }
 
-func (a *AlmacenSQLite) ActualizarUsuario(id int, datos models.Usuario) (models.Usuario, bool) {
+func (a *AlmacenSQLite) ActualizarUsuario(id uint, datos models.Usuario) (models.Usuario, bool) {
 	var existente models.Usuario
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.Usuario{}, false
@@ -438,7 +438,7 @@ func (a *AlmacenSQLite) ActualizarUsuario(id int, datos models.Usuario) (models.
 	return datos, true
 }
 
-func (a *AlmacenSQLite) BorrarUsuario(id int) bool {
+func (a *AlmacenSQLite) BorrarUsuario(id uint) bool {
 	res := a.db.Delete(&models.Usuario{}, id)
 	return res.RowsAffected > 0
 }

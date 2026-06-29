@@ -19,7 +19,7 @@ const duracionToken = 24 * time.Hour
 
 // Claims es la información que viaja dentro del JWT.
 type Claims struct {
-	UsuarioID int    `json:"uid"`
+	UsuarioID uint   `json:"uid"`
 	Rol       string `json:"rol"`
 	jwt.RegisteredClaims
 }
@@ -97,7 +97,7 @@ func (s *AuthService) ListarUsuarios() []models.Usuario {
 	return s.repo.ListarUsuarios()
 }
 
-func (s *AuthService) ObtenerUsuario(id int) (models.Usuario, bool) {
+func (s *AuthService) ObtenerUsuario(id uint) (models.Usuario, bool) {
 	return s.repo.BuscarUsuarioPorID(id)
 }
 
@@ -134,7 +134,7 @@ func (s *AuthService) CrearUsuario(nombre, email, password, rol string) (models.
 // ActualizarUsuario edita nombre/email/rol. Si password viene vacío, conserva
 // la contraseña actual (el repo ya maneja esa regla); si viene con texto,
 // se vuelve a hashear aquí antes de pasarlo al repo.
-func (s *AuthService) ActualizarUsuario(id int, nombre, email, password, rol string) (models.Usuario, error) {
+func (s *AuthService) ActualizarUsuario(id uint, nombre, email, password, rol string) (models.Usuario, error) {
 	nombre = strings.TrimSpace(nombre)
 	email = strings.TrimSpace(strings.ToLower(email))
 
@@ -159,7 +159,7 @@ func (s *AuthService) ActualizarUsuario(id int, nombre, email, password, rol str
 	return actualizado, nil
 }
 
-func (s *AuthService) BorrarUsuario(id int) error {
+func (s *AuthService) BorrarUsuario(id uint) error {
 	if !s.repo.BorrarUsuario(id) {
 		return ErrNoEncontrado
 	}
