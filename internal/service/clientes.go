@@ -66,7 +66,7 @@ func (s *ClientesService) CrearReserva(rv models.Reserva) (models.Reserva, error
 	if rv.ClienteID == 0 {
 		return models.Reserva{}, ErrCampoObligatorio
 	}
-	if _, ok := s.repo.BuscarClientePorID(rv.ClienteID); !ok {
+	if _, ok := s.repo.BuscarClientePorID(int(rv.ClienteID)); !ok {
 		return models.Reserva{}, ErrClienteInvalido
 	}
 	if rv.Estado == "" {
@@ -110,7 +110,7 @@ func (s *ClientesService) CrearPago(p models.Pago) (models.Pago, error) {
 	if p.Monto <= 0 {
 		return models.Pago{}, ErrMontoInvalido
 	}
-	if _, ok := s.repo.BuscarClientePorID(p.ClienteID); !ok {
+	if _, ok := s.repo.BuscarClientePorID(int(p.ClienteID)); !ok {
 		return models.Pago{}, ErrClienteInvalido
 	}
 	return s.repo.CrearPago(p), nil

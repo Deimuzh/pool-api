@@ -84,19 +84,12 @@ func (s *SeguridadService) ObtenerIncidente(id uint) (IncidenteConNombre, bool) 
 
 func (s *SeguridadService) enriquecerIncidente(inc models.Incidente) IncidenteConNombre {
 	nombreGuardavida := ""
-	if g, ok := s.repo.BuscarGuardavidaPorID(inc.GuardavidaID); ok {
+	if g, ok := s.repo.BuscarGuardavidaPorID(int(inc.GuardavidaID)); ok {
 		nombreGuardavida = g.Nombre
-	}
-	nombreCliente := ""
-	if inc.ClienteID != 0 {
-		if c, ok := s.clientes.BuscarClientePorID(inc.ClienteID); ok {
-			nombreCliente = c.Nombre
-		}
 	}
 	return IncidenteConNombre{
 		Incidente:        inc,
 		NombreGuardavida: nombreGuardavida,
-		NombreCliente:    nombreCliente,
 	}
 }
 
@@ -106,13 +99,8 @@ func (s *SeguridadService) CrearIncidente(inc models.Incidente) (IncidenteConNom
 	if inc.Tipo == "" || inc.Gravedad == "" || inc.GuardavidaID == 0 {
 		return IncidenteConNombre{}, ErrCampoObligatorio
 	}
-	if _, ok := s.repo.BuscarGuardavidaPorID(inc.GuardavidaID); !ok {
+	if _, ok := s.repo.BuscarGuardavidaPorID(int(inc.GuardavidaID)); !ok {
 		return IncidenteConNombre{}, ErrGuardavidaInvalido
-	}
-	if inc.ClienteID != 0 {
-		if _, ok := s.clientes.BuscarClientePorID(inc.ClienteID); !ok {
-			return IncidenteConNombre{}, ErrClienteInvalido
-		}
 	}
 	creado := s.repo.CrearIncidente(inc)
 	return s.enriquecerIncidente(creado), nil
@@ -157,13 +145,13 @@ func (s *SeguridadService) ListarAccesos() []AccesoConNombre {
 
 func (s *SeguridadService) enriquecerAcceso(a models.AccesoCliente) AccesoConNombre {
 	nombre := ""
-	if c, ok := s.clientes.BuscarClientePorID(a.ClienteID); ok {
+	if c, ok := s.clientes.BuscarClientePorID(int(a.ClienteID)); ok {
 		nombre = c.Nombre
 	}
 	return AccesoConNombre{
 		AccesoCliente: a,
 		NombreCliente: nombre,
-		PagoAlDia:     s.pagos.ClienteTienePagoEntrada(a.ClienteID),
+		PagoAlDia:     s.pagos.ClienteTienePagoEntrada(int(a.ClienteID)),
 	}
 }
 
@@ -179,7 +167,7 @@ func (s *SeguridadService) CrearAcceso(clienteID uint) (AccesoConNombre, error) 
 		return AccesoConNombre{}, ErrClienteInvalido
 	}
 
-	acc := models.AccesoCliente{ClienteID: clienteID}
+	acc := models.AccesoCliente{ClienteID: uint(clienteID)}
 	if s.pagos.ClienteTienePagoEntrada(clienteID) {
 		acc.Autorizado = true
 		acc.Motivo = ""

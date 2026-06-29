@@ -22,7 +22,15 @@ type mockSeguridadRepo struct {
 }
 
 func (m *mockSeguridadRepo) ListarGuardavidas() []models.Guardavida { return nil }
+<<<<<<< HEAD
 func (m *mockSeguridadRepo) BuscarGuardavidaPorID(id uint) (models.Guardavida, bool) {
+=======
+func (m *mockSeguridadRepo) BuscarGuardavidaPorID(id int) (models.Guardavida, bool) {
+	return models.Guardavida{}, false
+}
+func (m *mockSeguridadRepo) CrearGuardavida(g models.Guardavida) models.Guardavida { return g }
+func (m *mockSeguridadRepo) ActualizarGuardavida(id int, datos models.Guardavida) (models.Guardavida, bool) {
+>>>>>>> f4d782a (integrar lógica de clientes con GORM y tests automatizados)
 	return models.Guardavida{}, false
 }
 func (m *mockSeguridadRepo) CrearGuardavida(g models.Guardavida) models.Guardavida { return g }
@@ -32,7 +40,15 @@ func (m *mockSeguridadRepo) ActualizarGuardavida(id uint, datos models.Guardavid
 func (m *mockSeguridadRepo) BorrarGuardavida(id uint) bool { return false }
 
 func (m *mockSeguridadRepo) ListarIncidentes() []models.Incidente { return nil }
+<<<<<<< HEAD
 func (m *mockSeguridadRepo) BuscarIncidentePorID(id uint) (models.Incidente, bool) {
+=======
+func (m *mockSeguridadRepo) BuscarIncidentePorID(id int) (models.Incidente, bool) {
+	return models.Incidente{}, false
+}
+func (m *mockSeguridadRepo) CrearIncidente(i models.Incidente) models.Incidente { return i }
+func (m *mockSeguridadRepo) ActualizarIncidente(id int, datos models.Incidente) (models.Incidente, bool) {
+>>>>>>> f4d782a (integrar lógica de clientes con GORM y tests automatizados)
 	return models.Incidente{}, false
 }
 func (m *mockSeguridadRepo) CrearIncidente(i models.Incidente) models.Incidente { return i }
@@ -42,7 +58,11 @@ func (m *mockSeguridadRepo) ActualizarIncidente(id uint, datos models.Incidente)
 func (m *mockSeguridadRepo) BorrarIncidente(id uint) bool { return false }
 
 func (m *mockSeguridadRepo) ListarAccesos() []models.AccesoCliente { return nil }
+<<<<<<< HEAD
 func (m *mockSeguridadRepo) BuscarAccesoPorID(id uint) (models.AccesoCliente, bool) {
+=======
+func (m *mockSeguridadRepo) BuscarAccesoPorID(id int) (models.AccesoCliente, bool) {
+>>>>>>> f4d782a (integrar lógica de clientes con GORM y tests automatizados)
 	return models.AccesoCliente{}, false
 }
 

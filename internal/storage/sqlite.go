@@ -51,7 +51,7 @@ func (a *AlmacenSQLite) ActualizarGuardavida(id uint, datos models.Guardavida) (
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.Guardavida{}, false
 	}
-	datos.ID = id
+	datos.ID = uint(id)
 	datos.CreadoEn = existente.CreadoEn
 	a.db.Save(&datos)
 	return datos, true
@@ -91,7 +91,7 @@ func (a *AlmacenSQLite) ActualizarIncidente(id uint, datos models.Incidente) (mo
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.Incidente{}, false
 	}
-	datos.ID = id
+	datos.ID = uint(id)
 	datos.FechaHora = existente.FechaHora
 	a.db.Save(&datos)
 	return datos, true
@@ -131,7 +131,7 @@ func (a *AlmacenSQLite) ActualizarAcceso(id uint, datos models.AccesoCliente) (m
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.AccesoCliente{}, false
 	}
-	datos.ID = id
+	datos.ID = uint(id)
 	datos.FechaHora = existente.FechaHora
 	a.db.Save(&datos)
 	return datos, true
@@ -170,7 +170,7 @@ func (a *AlmacenSQLite) ActualizarEquipo(id uint, datos models.Equipo) (models.E
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.Equipo{}, false
 	}
-	datos.ID = id
+	datos.ID = uint(id)
 	a.db.Save(&datos)
 	return datos, true
 }
@@ -209,7 +209,7 @@ func (a *AlmacenSQLite) ActualizarRegistro(id uint, datos models.RegistroManteni
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.RegistroMantenimiento{}, false
 	}
-	datos.ID = id
+	datos.ID = uint(id)
 	datos.FechaHora = existente.FechaHora
 	a.db.Save(&datos)
 	return datos, true
@@ -248,7 +248,7 @@ func (a *AlmacenSQLite) ActualizarQuimico(id uint, datos models.ProductoQuimico)
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.ProductoQuimico{}, false
 	}
-	datos.ID = id
+	datos.ID = uint(id)
 	a.db.Save(&datos)
 	return datos, true
 }
@@ -287,7 +287,7 @@ func (a *AlmacenSQLite) ActualizarCliente(id uint, datos models.Cliente) (models
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.Cliente{}, false
 	}
-	datos.ID = id
+	datos.ID = uint(id)
 	datos.FechaRegistro = existente.FechaRegistro
 	a.db.Save(&datos)
 	return datos, true
@@ -327,7 +327,7 @@ func (a *AlmacenSQLite) ActualizarReserva(id uint, datos models.Reserva) (models
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.Reserva{}, false
 	}
-	datos.ID = id
+	datos.ID = uint(id)
 	datos.FechaHora = existente.FechaHora
 	a.db.Save(&datos)
 	return datos, true
@@ -367,7 +367,7 @@ func (a *AlmacenSQLite) ActualizarPago(id uint, datos models.Pago) (models.Pago,
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.Pago{}, false
 	}
-	datos.ID = id
+	datos.ID = uint(id)
 	datos.FechaHora = existente.FechaHora
 	a.db.Save(&datos)
 	return datos, true

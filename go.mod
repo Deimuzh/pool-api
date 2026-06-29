@@ -14,12 +14,21 @@ require (
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/glebarez/go-sqlite v1.21.2 // indirect
+<<<<<<< HEAD
+=======
+	github.com/glebarez/sqlite v1.11.0 // indirect
+	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
+>>>>>>> f4d782a (integrar lógica de clientes con GORM y tests automatizados)
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/mattn/go-sqlite3 v1.14.17 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
+<<<<<<< HEAD
+=======
+	golang.org/x/crypto v0.53.0 // indirect
+>>>>>>> f4d782a (integrar lógica de clientes con GORM y tests automatizados)
 	golang.org/x/sys v0.46.0 // indirect
 	modernc.org/libc v1.22.5 // indirect
 	modernc.org/mathutil v1.5.0 // indirect

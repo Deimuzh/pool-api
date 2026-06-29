@@ -14,111 +14,91 @@ import (
 
 // ─── CLIENTE ─────────────────────────────────────────────────────────────────
 
+func (s *Server) ListarClientes(w http.ResponseWriter, _ *http.Request) {
+	RespondJSON(w, http.StatusOK, s.Clientes.ListarClientes())
+}
+
+func (s *Server) CrearCliente(w http.ResponseWriter, r *http.Request) {
+	var c models.Cliente
+	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
+		RespondError(w, http.StatusBadRequest, "JSON inválido")
+		return
+	}
+
+	creado, err := s.Clientes.CrearCliente(c)
+	if err != nil {
+		RespondError(w, statusDeError(err), err.Error())
+		return
+	}
+	RespondJSON(w, http.StatusCreated, creado)
+}
+
+func (s *Server) ObtenerCliente(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		RespondError(w, http.StatusBadRequest, "ID inválido")
+		return
+	}
+
+	cliente, ok := s.Clientes.ObtenerCliente(id)
+	if !ok {
+		RespondError(w, http.StatusNotFound, "Cliente no encontrado")
+		return
+	}
+	RespondJSON(w, http.StatusOK, cliente)
+}
+
+func (s *Server) ActualizarCliente(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		RespondError(w, http.StatusBadRequest, "ID inválido")
+		return
+	}
+
+	var c models.Cliente
+	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
+		RespondError(w, http.StatusBadRequest, "JSON inválido")
+		return
+	}
+
+	actualizado, err := s.Clientes.ActualizarCliente(id, c)
+	if err != nil {
+		RespondError(w, statusDeError(err), err.Error())
+		return
+	}
+	RespondJSON(w, http.StatusOK, actualizado)
+}
+
+func (s *Server) BorrarCliente(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		RespondError(w, http.StatusBadRequest, "ID inválido")
+		return
+	}
+	if err := s.Clientes.BorrarCliente(id); err != nil {
+		RespondError(w, statusDeError(err), err.Error())
+		return
+	}
+	RespondJSON(w, http.StatusOK, map[string]string{"mensaje": "cliente eliminado"})
+}
+
 func CrearCliente(w http.ResponseWriter, r *http.Request) {
-	var c models.Cliente
-
-	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
-		http.Error(w, "JSON inválido", http.StatusBadRequest)
-		return
-	}
-
-	if c.Nombre == "" || c.Cedula == "" {
-		http.Error(w, "nombre y cedula son obligatorios", http.StatusBadRequest)
-		return
-	}
-
-	if c.Membresia == "" {
-		c.Membresia = "ninguna"
-	}
-
-	c.FechaRegistro = time.Now()
-
-	if err := storage.DB.Create(&c).Error; err != nil {
-		http.Error(w, "Error al guardar cliente", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(c)
+	panic("use Server.CrearCliente")
 }
-
 func ListarClientes(w http.ResponseWriter, r *http.Request) {
-	var clientes []models.Cliente
-
-	if err := storage.DB.Find(&clientes).Error; err != nil {
-		http.Error(w, "Error al obtener clientes", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(clientes)
+	panic("use Server.ListarClientes")
 }
-
 func ObtenerCliente(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
-		return
-	}
-
-	var c models.Cliente
-	if err := storage.DB.First(&c, id).Error; err != nil {
-		http.Error(w, "Cliente no encontrado", http.StatusNotFound)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(c)
+	panic("use Server.ObtenerCliente")
 }
-
 func ActualizarCliente(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
-		return
-	}
-
-	var c models.Cliente
-	if err := storage.DB.First(&c, id).Error; err != nil {
-		http.Error(w, "Cliente no encontrado", http.StatusNotFound)
-		return
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
-		http.Error(w, "JSON inválido", http.StatusBadRequest)
-		return
-	}
-
-	if err := storage.DB.Save(&c).Error; err != nil {
-		http.Error(w, "Error al actualizar cliente", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(c)
+	panic("use Server.ActualizarCliente")
 }
-
 func EliminarCliente(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
-		return
-	}
-
-	if err := storage.DB.Delete(&models.Cliente{}, id).Error; err != nil {
-		http.Error(w, "Error al eliminar cliente", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"mensaje":"cliente eliminado"}`))
+	panic("use Server.BorrarCliente")
 }
 
 // ─── RESERVA ─────────────────────────────────────────────────────────────────

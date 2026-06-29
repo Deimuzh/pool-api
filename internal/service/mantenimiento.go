@@ -68,7 +68,7 @@ func (s *MantenimientoService) CrearRegistro(rm models.RegistroMantenimiento) (m
 	if rm.EquipoID == 0 || rm.Tipo == "" {
 		return models.RegistroMantenimiento{}, ErrCampoObligatorio
 	}
-	if _, ok := s.repo.BuscarEquipoPorID(rm.EquipoID); !ok {
+	if _, ok := s.repo.BuscarEquipoPorID(int(rm.EquipoID)); !ok {
 		return models.RegistroMantenimiento{}, ErrEquipoInvalido
 	}
 	return s.repo.CrearRegistro(rm), nil
