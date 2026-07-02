@@ -14,6 +14,10 @@ import (
 
 // ─── CLIENTE ─────────────────────────────────────────────────────────────────
 
+// CrearCliente lee JSON desde el body y crea un nuevo cliente en la base.
+// Request: JSON con campos de `models.Cliente` (Nombre, Cedula, Membresia opcional).
+// Responses: 201 Created con el cliente creado; 400 Bad Request en JSON inválido
+// o campos requeridos; 500 Internal Server Error si falla la persistencia.
 func CrearCliente(w http.ResponseWriter, r *http.Request) {
 	var c models.Cliente
 
@@ -45,6 +49,8 @@ func CrearCliente(w http.ResponseWriter, r *http.Request) {
 
 func ListarClientes(w http.ResponseWriter, r *http.Request) {
 	var clientes []models.Cliente
+	// ListarClientes devuelve todos los clientes en JSON.
+	// Responses: 200 OK con slice de clientes; 500 si hay error en la consulta.
 
 	if err := storage.DB.Find(&clientes).Error; err != nil {
 		http.Error(w, "Error al obtener clientes", http.StatusInternalServerError)
@@ -57,6 +63,8 @@ func ListarClientes(w http.ResponseWriter, r *http.Request) {
 }
 
 func ObtenerCliente(w http.ResponseWriter, r *http.Request) {
+	// ObtenerCliente obtiene un cliente por ID (param URL `id`).
+	// Responses: 200 OK con el cliente; 400 si el id es inválido; 404 si no existe.
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -76,6 +84,10 @@ func ObtenerCliente(w http.ResponseWriter, r *http.Request) {
 }
 
 func ActualizarCliente(w http.ResponseWriter, r *http.Request) {
+	// ActualizarCliente actualiza los campos de un cliente existente.
+	// Request: JSON con los campos a actualizar.
+	// Responses: 200 OK con el cliente actualizado; 400 en JSON inválido o id inválido;
+	// 404 si el cliente no existe; 500 en error de persistencia.
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -105,6 +117,8 @@ func ActualizarCliente(w http.ResponseWriter, r *http.Request) {
 }
 
 func EliminarCliente(w http.ResponseWriter, r *http.Request) {
+	// EliminarCliente borra un cliente por ID.
+	// Responses: 200 OK en caso de eliminación; 400 si id inválido; 500 si falla la eliminación.
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -123,6 +137,9 @@ func EliminarCliente(w http.ResponseWriter, r *http.Request) {
 
 // ─── RESERVA ─────────────────────────────────────────────────────────────────
 
+// CrearReserva crea una nueva reserva asociada a un cliente.
+// Request: JSON con `ClienteID` (obligatorio) y otros campos.
+// Responses: 201 Created; 400 si faltan datos; 500 si error al persistir.
 func CrearReserva(w http.ResponseWriter, r *http.Request) {
 	var rv models.Reserva
 
@@ -152,6 +169,8 @@ func CrearReserva(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(rv)
 }
 
+// ListarReservas devuelve todas las reservas en JSON.
+// Responses: 200 OK; 500 si falla la consulta.
 func ListarReservas(w http.ResponseWriter, r *http.Request) {
 	var reservas []models.Reserva
 
@@ -165,6 +184,8 @@ func ListarReservas(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(reservas)
 }
 
+// ObtenerReserva obtiene una reserva por ID (param URL `id`).
+// Responses: 200 OK; 400 si id inválido; 404 si no encontrada.
 func ObtenerReserva(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -184,6 +205,8 @@ func ObtenerReserva(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(rv)
 }
 
+// ActualizarReserva actualiza una reserva existente.
+// Responses: 200 OK; 400 si JSON inválido o id inválido; 404 si no existe; 500 si falla.
 func ActualizarReserva(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -213,6 +236,8 @@ func ActualizarReserva(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(rv)
 }
 
+// EliminarReserva borra una reserva por ID.
+// Responses: 200 OK; 400 si id inválido; 500 si falla la eliminación.
 func EliminarReserva(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -232,6 +257,9 @@ func EliminarReserva(w http.ResponseWriter, r *http.Request) {
 
 // ─── PAGO ────────────────────────────────────────────────────────────────────
 
+// CrearPago crea un registro de pago para un cliente.
+// Request: JSON con `ClienteID` y `Monto` (obligatorios).
+// Responses: 201 Created; 400 si faltan datos o monto inválido; 500 si falla persistencia.
 func CrearPago(w http.ResponseWriter, r *http.Request) {
 	var p models.Pago
 
@@ -257,6 +285,8 @@ func CrearPago(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(p)
 }
 
+// ListarPagos devuelve todos los pagos en JSON.
+// Responses: 200 OK; 500 si falla la consulta.
 func ListarPagos(w http.ResponseWriter, r *http.Request) {
 	var pagos []models.Pago
 
@@ -270,6 +300,8 @@ func ListarPagos(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(pagos)
 }
 
+// ObtenerPago obtiene un pago por ID (param URL `id`).
+// Responses: 200 OK; 400 si id inválido; 404 si no existe.
 func ObtenerPago(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -289,6 +321,8 @@ func ObtenerPago(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(p)
 }
 
+// ActualizarPago actualiza un pago existente.
+// Responses: 200 OK; 400 si JSON inválido o id inválido; 404 si no existe; 500 si falla.
 func ActualizarPago(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -318,6 +352,8 @@ func ActualizarPago(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(p)
 }
 
+// EliminarPago borra un pago por ID.
+// Responses: 200 OK; 400 si id inválido; 500 si falla la eliminación.
 func EliminarPago(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)

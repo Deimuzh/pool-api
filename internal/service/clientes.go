@@ -16,14 +16,23 @@ func NewClientesService(repo storage.ClientesModulo) *ClientesService {
 
 // ─── CLIENTE ──────────────────────────────────────────────────────────────────
 
+// ListarClientes devuelve todos los clientes existentes.
+// Retorna: slice de `models.Cliente` obtenido desde el repositorio.
 func (s *ClientesService) ListarClientes() []models.Cliente {
 	return s.repo.ListarClientes()
 }
 
+// ObtenerCliente busca un cliente por `id`.
+// Parámetros: `id` uint.
+// Retorna: `models.Cliente` y `bool` indicando si se encontró.
 func (s *ClientesService) ObtenerCliente(id uint) (models.Cliente, bool) {
 	return s.repo.BuscarClientePorID(id)
 }
 
+// CrearCliente valida campos obligatorios y crea un cliente.
+// Reglas: `Nombre` y `Cedula` son obligatorios (ErrCampoObligatorio).
+// Si `Membresia` está vacía se asigna "ninguna" por defecto.
+// Retorna el cliente creado o error de validación.
 func (s *ClientesService) CrearCliente(c models.Cliente) (models.Cliente, error) {
 	if c.Nombre == "" || c.Cedula == "" {
 		return models.Cliente{}, ErrCampoObligatorio
@@ -34,6 +43,8 @@ func (s *ClientesService) CrearCliente(c models.Cliente) (models.Cliente, error)
 	return s.repo.CrearCliente(c), nil
 }
 
+// ActualizarCliente valida datos y delega la actualización al repositorio.
+// Retorna ErrCampoObligatorio si faltan campos, ErrNoEncontrado si no existe el id.
 func (s *ClientesService) ActualizarCliente(id uint, c models.Cliente) (models.Cliente, error) {
 	if c.Nombre == "" || c.Cedula == "" {
 		return models.Cliente{}, ErrCampoObligatorio
@@ -45,6 +56,8 @@ func (s *ClientesService) ActualizarCliente(id uint, c models.Cliente) (models.C
 	return actualizado, nil
 }
 
+// BorrarCliente elimina un cliente por `id`.
+// Retorna ErrNoEncontrado si no existía.
 func (s *ClientesService) BorrarCliente(id uint) error {
 	if !s.repo.BorrarCliente(id) {
 		return ErrNoEncontrado
