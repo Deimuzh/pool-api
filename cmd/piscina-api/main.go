@@ -4,6 +4,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -55,9 +56,21 @@ func main() {
 	// 5. Sirve el frontend (index.html) en la raíz. Sin proteger: el HTML
 	//    necesita cargar sin token para poder mostrar la pantalla de login.
 	r.Get("/", func(w http.ResponseWriter, _ *http.Request) {
-		html, err := os.ReadFile("../../web/index.html")
+		paths := []string{
+			"./web/index.html",
+			"../web/index.html",
+			"../../web/index.html",
+		}
+		var html []byte
+		var err error
+		for _, p := range paths {
+			if _, statErr := os.Stat(p); statErr == nil {
+				html, err = os.ReadFile(p)
+				break
+			}
+		}
 		if err != nil {
-			http.Error(w, "No se encontró index.html en ../../web/", http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("No se encontró index.html en ninguna ruta válida: %v", err), http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
