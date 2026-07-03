@@ -9,7 +9,7 @@ import (
 // ─── MOCKS MANUALES PARA CLIENTES ──────────────────────────────────────────
 //
 // Mock manual de storage.ClientesModulo que implementa toda la interfaz
-// 
+//
 
 type mockClientesModulo struct {
 	clientes        map[uint]models.Cliente
@@ -396,6 +396,69 @@ func TestCrearReserva_ClienteInvalido(t *testing.T) {
 
 	if repo.crearReservaLlamado {
 		t.Error("no se debería llegar al repositorio con cliente inválido")
+	}
+}
+
+// TestCrearCliente_CedulaDuplicada verifica que no se permita crear dos
+// clientes con la misma cédula y que el repositorio no sea llamado.
+func TestCrearCliente_CedulaDuplicada(t *testing.T) {
+	repo := newMockClientesModulo()
+	svc := NewClientesService(repo)
+
+	// Cliente existente con cédula 111
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Existente", Cedula: "111"}
+
+	nuevo := models.Cliente{Nombre: "Nuevo", Cedula: "111"}
+
+	_, err := svc.CrearCliente(nuevo)
+	if err != ErrCedulaEnUso {
+		t.Fatalf("se esperaba ErrCedulaEnUso, se obtuvo: %v", err)
+	}
+
+	if repo.crearClienteLlamado {
+		t.Error("no se debería haber llamado a CrearCliente del repositorio cuando la cédula está en uso")
+	}
+}
+
+// TestCrearCliente_EmailDuplicado verifica que no se permita crear dos
+// clientes con el mismo email y que el repositorio no sea llamado.
+func TestCrearCliente_EmailDuplicado(t *testing.T) {
+	repo := newMockClientesModulo()
+	svc := NewClientesService(repo)
+
+	// Cliente existente con email exist@example.com
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Existente", Cedula: "200", Email: "exist@example.com"}
+
+	nuevo := models.Cliente{Nombre: "Nuevo", Cedula: "201", Email: "exist@example.com"}
+
+	_, err := svc.CrearCliente(nuevo)
+	if err != ErrEmailEnUso {
+		t.Fatalf("se esperaba ErrEmailEnUso, se obtuvo: %v", err)
+	}
+
+	if repo.crearClienteLlamado {
+		t.Error("no se debería haber llamado a CrearCliente del repositorio cuando el email está en uso")
+	}
+}
+
+// TestCrearCliente_TelefonoDuplicado verifica que no se permita crear dos
+// clientes con el mismo teléfono y que el repositorio no sea llamado.
+func TestCrearCliente_TelefonoDuplicado(t *testing.T) {
+	repo := newMockClientesModulo()
+	svc := NewClientesService(repo)
+
+	// Cliente existente con teléfono 555-0000
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Existente", Cedula: "300", Telefono: "555-0000"}
+
+	nuevo := models.Cliente{Nombre: "Nuevo", Cedula: "301", Telefono: "555-0000"}
+
+	_, err := svc.CrearCliente(nuevo)
+	if err != ErrTelefonoEnUso {
+		t.Fatalf("se esperaba ErrTelefonoEnUso, se obtuvo: %v", err)
+	}
+
+	if repo.crearClienteLlamado {
+		t.Error("no se debería haber llamado a CrearCliente del repositorio cuando el teléfono está en uso")
 	}
 }
 

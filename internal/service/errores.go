@@ -13,4 +13,5 @@ var (
 	ErrEquipoInvalido        = errors.New("equipo_id no existe")
 	ErrCredencialesInvalidas = errors.New("email o contraseña incorrectos")
 	ErrEmailEnUso            = errors.New("ese email ya está registrado")
+	ErrTelefonoEnUso         = errors.New("ese teléfono ya está registrado")
 )

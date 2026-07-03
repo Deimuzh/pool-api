@@ -40,6 +40,20 @@ func (s *ClientesService) CrearCliente(c models.Cliente) (models.Cliente, error)
 	if c.Membresia == "" {
 		c.Membresia = "ninguna"
 	}
+	// Verificar que la cédula no esté ya en uso por otro cliente.
+	for _, existente := range s.repo.ListarClientes() {
+		if existente.Cedula == c.Cedula {
+			return models.Cliente{}, ErrCedulaEnUso
+		}
+		// Si el email no está vacío en la petición y ya existe, rechazar
+		if c.Email != "" && existente.Email == c.Email {
+			return models.Cliente{}, ErrEmailEnUso
+		}
+		// Si el teléfono no está vacío en la petición y ya existe, rechazar
+		if c.Telefono != "" && existente.Telefono == c.Telefono {
+			return models.Cliente{}, ErrTelefonoEnUso
+		}
+	}
 	return s.repo.CrearCliente(c), nil
 }
 
