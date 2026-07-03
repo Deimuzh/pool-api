@@ -96,6 +96,14 @@
     .btn-save { padding: 7px 16px; font-size: 13px; background: var(--green); color: #fff; border: none; border-radius: var(--radius-sm); cursor: pointer; font-weight: 500; }
     .btn-save:hover { background: var(--green-dk); }
 
+    /* PRECIOS SUGERIDOS */
+    .price-group { margin-bottom: 8px; }
+    .price-group:last-child { margin-bottom: 0; }
+    .price-group-title { font-size: 11px; color: var(--muted); margin-bottom: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em; }
+    .price-table { display: flex; gap: 5px; flex-wrap: wrap; }
+    .price-option { padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 12px; cursor: pointer; }
+    .price-option:hover { border-color: var(--green); background: #0F6E5608; }
+
     /* ALERTA ACCESO */
     .acceso-alert { padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 1rem; display: none; }
     .acceso-alert.denegado { background: #FCEBEB; color: #A32D2D; border: 1px solid #f5c6c6; }
@@ -286,8 +294,8 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Nombre</th><th>Cédula</th><th>Email</th><th>Membresía</th><th></th></tr></thead>
-            <tbody id="tbClientes"><tr class="empty-row"><td colspan="5">Cargando...</td></tr></tbody>
+            <thead><tr><th>Nombre</th><th>Cédula</th><th>Teléfono</th><th>Email</th><th>Membresía</th><th></th></tr></thead>
+            <tbody id="tbClientes"><tr class="empty-row"><td colspan="6">Cargando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -338,7 +346,9 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const API = '/api/v1'
+const API = (window.location.origin && window.location.origin !== 'null')
+  ? window.location.origin + '/api/v1'
+  : 'http://localhost:8080/api/v1'
 
 // ── TOKEN ─────────────────────────────────────────────────────────────────────
 // El token se guarda solo en memoria (variable JS), no en localStorage,
@@ -575,12 +585,13 @@ function renderQuimicos(data) {
 
 function renderClientes(data) {
   const tb = document.getElementById('tbClientes')
-  if (!data.length) { tb.innerHTML = filaVacia(5); return }
+  if (!data.length) { tb.innerHTML = filaVacia(6); return }
   const mem = { mensual: 'bg-blue', trimestral: 'bg-blue', anual: 'bg-green', ninguna: 'bg-gray' }
   tb.innerHTML = data.map(c => `
     <tr>
       <td><strong>${c.nombre}</strong></td>
       <td>${c.cedula}</td>
+      <td style="color:var(--muted)">${c.telefono || '—'}</td>
       <td style="color:var(--muted)">${c.email || '—'}</td>
       <td><span class="badge ${mem[c.membresia?.toLowerCase()] || 'bg-gray'}">${c.membresia || 'ninguna'}</span></td>
       <td>${btnDel('/clientes', c.id)}</td>
@@ -591,14 +602,17 @@ function renderReservas(data) {
   const tb = document.getElementById('tbReservas')
   if (!data.length) { tb.innerHTML = filaVacia(5); return }
   const col = { confirmada: 'bg-green', pendiente: 'bg-amber', cancelada: 'bg-red' }
-  tb.innerHTML = data.map(rv => `
+  tb.innerHTML = data.map(rv => {
+    const duracion = rv.duracion ? (rv.duracion % 60 === 0 ? `${rv.duracion / 60} h` : `${rv.duracion} min`) : '—'
+    return `
     <tr>
       <td>${rv.cliente_id}</td>
       <td><span class="badge ${col[rv.estado?.toLowerCase()] || 'bg-gray'}">${rv.estado}</span></td>
-      <td>${rv.duracion ? rv.duracion + ' min' : '—'}</td>
+      <td>${duracion}</td>
       <td>${new Date(rv.fecha_hora).toLocaleString('es-EC')}</td>
       <td>${btnDel('/reservas', rv.id)}</td>
-    </tr>`).join('')
+    </tr>`
+  }).join('')
 }
 
 function renderPagos(data) {
@@ -707,9 +721,11 @@ const FORMS = {
     endpoint: '/reservas',
     campos: [
       { label: 'Cliente', name: 'cliente_id', type: 'dynamic-select', source: 'clientes' },
-      { label: 'Duración (minutos)', name: 'duracion', type: 'number', placeholder: '60' },
+      { label: 'Duración', name: 'duracion', type: 'number', placeholder: '60' },
+      { label: 'Unidad', name: 'duracion_tipo', type: 'select', opciones: ['minutos', 'horas'] },
       { label: 'Estado', name: 'estado', type: 'select', opciones: ['pendiente', 'confirmada', 'cancelada'] },
-    ]
+    ],
+    nota: 'Selecciona minutos u horas para la duración de la reserva.'
   },
   pago: {
     titulo: 'Registrar pago',
@@ -785,6 +801,28 @@ function openModal(type, id) {
     html += `<p style="font-size:12px; color:var(--muted); background:var(--bg); padding:8px 10px; border-radius:6px; margin-top:4px;">${form.nota}</p>`
   }
 
+  if (modalActual === 'pago') {
+    html += `<div class="modal-field"><label>Precios sugeridos</label>
+      <div class="price-group">
+        <div class="price-group-title">Sin membresía</div>
+        <div class="price-table">
+          <button type="button" class="price-option" onclick="setMontoPrecio(5)">30 min — $5.00</button>
+          <button type="button" class="price-option" onclick="setMontoPrecio(10)">1 h — $10.00</button>
+          <button type="button" class="price-option" onclick="setMontoPrecio(18)">2 h — $18.00</button>
+        </div>
+      </div>
+      <div class="price-group">
+        <div class="price-group-title">Con membresía</div>
+        <div class="price-table">
+          <button type="button" class="price-option" onclick="setMontoPrecio(3)">30 min — $3.00</button>
+          <button type="button" class="price-option" onclick="setMontoPrecio(6)">1 h — $6.00</button>
+          <button type="button" class="price-option" onclick="setMontoPrecio(10)">2 h — $10.00</button>
+        </div>
+      </div>
+      <small style="color:var(--muted);display:block;margin-top:4px;">Haz clic en una opción para sumarlo al monto.</small>
+    </div>`
+  }
+
   document.getElementById('modalBody').innerHTML = html
   document.getElementById('modal').classList.add('open')
 }
@@ -813,6 +851,10 @@ async function guardarModal() {
       body[c.name] = el.value
     }
   })
+
+  if (modalActual === 'reserva' && body.duracion_tipo === 'horas') {
+    body.duracion = Number(body.duracion) * 60
+  }
 
   // Validación temprana en el frontend para los selects dinámicos obligatorios:
   // si quedaron en 0 (placeholder "Ninguno" o lista vacía), avisamos antes de llamar a la API.
@@ -860,6 +902,13 @@ async function guardarModal() {
     }
   } catch {
     /* fetchConToken ya maneja el 401 */
+  }
+}
+
+function setMontoPrecio(valor) {
+  const input = document.querySelector('#modalBody [name="monto"]')
+  if (input) {
+    input.value = (Number(input.value) || 0) + valor
   }
 }
 

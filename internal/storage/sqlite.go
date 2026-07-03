@@ -494,7 +494,7 @@ func (a *AlmacenSQLite) SembrarSiVacio() {
 // Cámbiala apenas puedas desde el CRUD de usuarios.
 func (a *AlmacenSQLite) sembrarAdminPorDefecto() {
 	var n int64
-	a.db.Model(&models.Usuario{}).Count(&n)
+	a.db.Model(&models.Usuario{}).Where("email = ?", "admin@piscina.com").Count(&n)
 	if n > 0 {
 		return
 	}

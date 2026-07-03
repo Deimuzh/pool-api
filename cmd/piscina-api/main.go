@@ -12,6 +12,7 @@ import (
 	"github.com/glebarez/sqlite" // driver GORM (pure-Go)
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
+	chcors "github.com/go-chi/cors"
 	"gorm.io/gorm"
 
 	"pool-api/internal/handlers"
@@ -52,6 +53,13 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(chimw.Logger)
 	r.Use(chimw.Recoverer)
+	r.Use(chcors.Handler(chcors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 
 	// 5. Sirve el frontend (index.html) en la raíz. Sin proteger: el HTML
 	//    necesita cargar sin token para poder mostrar la pantalla de login.

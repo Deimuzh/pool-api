@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"pool-api/internal/models"
@@ -39,11 +38,6 @@ func CrearCliente(w http.ResponseWriter, r *http.Request) {
 	c.FechaRegistro = time.Now()
 
 	if err := storage.DB.Create(&c).Error; err != nil {
-		// Detectar violación de índice único en SQLite y devolver 409 Conflict
-		if strings.Contains(err.Error(), "UNIQUE constraint failed") || strings.Contains(err.Error(), "duplicate") {
-			http.Error(w, "cédula ya registrada", http.StatusConflict)
-			return
-		}
 		http.Error(w, "Error al guardar cliente", http.StatusInternalServerError)
 		return
 	}
