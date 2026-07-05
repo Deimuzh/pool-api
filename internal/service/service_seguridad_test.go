@@ -70,7 +70,7 @@ func (m *mockClienteRepo) BuscarClientePorID(id uint) (models.Cliente, bool) {
 	c, ok := m.clientes[int(id)]
 	return c, ok
 }
-func (m *mockClienteRepo) CrearCliente(c models.Cliente) models.Cliente { return c }
+func (m *mockClienteRepo) CrearCliente(c models.Cliente) (models.Cliente, error) { return c, nil }
 func (m *mockClienteRepo) ActualizarCliente(id uint, datos models.Cliente) (models.Cliente, bool) {
 	return models.Cliente{}, false
 }
@@ -83,9 +83,9 @@ type mockPagoRepo struct {
 	tienePago bool
 }
 
-func (m *mockPagoRepo) ListarPagos() []models.Pago                  { return nil }
-func (m *mockPagoRepo) BuscarPagoPorID(id uint) (models.Pago, bool) { return models.Pago{}, false }
-func (m *mockPagoRepo) CrearPago(p models.Pago) models.Pago         { return p }
+func (m *mockPagoRepo) ListarPagos() []models.Pago                   { return nil }
+func (m *mockPagoRepo) BuscarPagoPorID(id uint) (models.Pago, bool)  { return models.Pago{}, false }
+func (m *mockPagoRepo) CrearPago(p models.Pago) (models.Pago, error) { return p, nil }
 func (m *mockPagoRepo) ActualizarPago(id uint, datos models.Pago) (models.Pago, bool) {
 	return models.Pago{}, false
 }
@@ -96,13 +96,9 @@ func (m *mockPagoRepo) ClienteTienePagoEntrada(clienteID uint) bool {
 
 // ─── TEST ───────────────────────────────────────────────────────────────────
 
-// TestCrearAcceso_SinPagoNoAutoriza prueba la regla de negocio central del
-// módulo Seguridad: si el cliente existe pero NO tiene un pago de entrada
-// registrado, el acceso debe guardarse como NO autorizado (Autorizado=false)
-// y con un motivo explicativo. Si esta regla se rompiera (por ejemplo, si
-// alguien cambiara el service para autorizar siempre), el test fallaría
-// porque accesoRecibido.Autorizado vendría en true.
-func TestCrearAcceso_SinPagoNoAutoriza(t *testing.T) {
+// TestCrearAcceso_SinPagoNoLlegaAlRepo prueba que un cliente sin membresía ni
+// pago no puede registrar acceso.
+func TestCrearAcceso_SinPagoNoLlegaAlRepo(t *testing.T) {
 	repo := &mockSeguridadRepo{}
 	clientes := &mockClienteRepo{
 		clientes: map[int]models.Cliente{
@@ -113,24 +109,13 @@ func TestCrearAcceso_SinPagoNoAutoriza(t *testing.T) {
 
 	svc := NewSeguridadService(repo, clientes, pagos)
 
-	resultado, err := svc.CrearAcceso(2)
-	if err != nil {
-		t.Fatalf("no se esperaba error, se obtuvo: %v", err)
+	_, err := svc.CrearAcceso(2)
+	if err != ErrClienteSinAcceso {
+		t.Fatalf("se esperaba ErrClienteSinAcceso, se obtuvo: %v", err)
 	}
 
-	if !repo.crearAccesoLlamado {
-		t.Fatal("se esperaba que CrearAcceso llegara al repositorio")
-	}
-
-	// La regla de negocio real: sin pago, NO se autoriza.
-	if repo.accesoRecibido.Autorizado {
-		t.Error("el acceso no debería haberse autorizado: el cliente no tiene pago de entrada")
-	}
-	if repo.accesoRecibido.Motivo == "" {
-		t.Error("se esperaba un motivo explicando por qué no se autorizó el acceso")
-	}
-	if resultado.PagoAlDia {
-		t.Error("PagoAlDia debería ser false: el cliente no tiene pago de entrada")
+	if repo.crearAccesoLlamado {
+		t.Error("CrearAcceso NO debió llegar al repositorio: el cliente no tiene pago")
 	}
 }
 

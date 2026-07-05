@@ -72,7 +72,7 @@ func (f *fakeClienteRepo) ListarClientes() []models.Cliente { return nil }
 func (f *fakeClienteRepo) BuscarClientePorID(id uint) (models.Cliente, bool) {
 	return models.Cliente{}, false
 }
-func (f *fakeClienteRepo) CrearCliente(c models.Cliente) models.Cliente { return c }
+func (f *fakeClienteRepo) CrearCliente(c models.Cliente) (models.Cliente, error) { return c, nil }
 func (f *fakeClienteRepo) ActualizarCliente(id uint, datos models.Cliente) (models.Cliente, bool) {
 	return models.Cliente{}, false
 }
@@ -82,7 +82,7 @@ type fakePagoRepo struct{}
 
 func (f *fakePagoRepo) ListarPagos() []models.Pago                  { return nil }
 func (f *fakePagoRepo) BuscarPagoPorID(id uint) (models.Pago, bool) { return models.Pago{}, false }
-func (f *fakePagoRepo) CrearPago(p models.Pago) models.Pago         { return p }
+func (f *fakePagoRepo) CrearPago(p models.Pago) (models.Pago, error) { return p, nil }
 func (f *fakePagoRepo) ActualizarPago(id uint, datos models.Pago) (models.Pago, bool) {
 	return models.Pago{}, false
 }

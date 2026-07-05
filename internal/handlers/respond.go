@@ -34,6 +34,11 @@ func statusDeError(err error) int {
 		errors.Is(err, service.ErrMontoInvalido),
 		errors.Is(err, service.ErrGuardavidaInvalido),
 		errors.Is(err, service.ErrClienteInvalido),
+		errors.Is(err, service.ErrClienteSinMembresia),
+		errors.Is(err, service.ErrClienteConMembresia),
+		errors.Is(err, service.ErrClienteSinAcceso),
+		errors.Is(err, service.ErrConceptoPagoInvalido),
+		errors.Is(err, service.ErrDuracionInvalida),
 		errors.Is(err, service.ErrEquipoInvalido):
 		return http.StatusBadRequest
 	case errors.Is(err, service.ErrNoEncontrado):

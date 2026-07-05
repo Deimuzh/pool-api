@@ -11,11 +11,10 @@ import (
 	"pool-api/internal/storage"
 )
 
-// secretJWT firma y valida los tokens. En un entorno real esto debería
-// venir de una variable de entorno, nunca quedar fijo en el código.
-var secretJWT = []byte("piscina-los-ceibos-clave-secreta")
-
-const duracionToken = 24 * time.Hour
+const (
+	secretoJWTDefecto    = "piscina-los-ceibos-clave-secreta"
+	duracionTokenDefecto = 24 * time.Hour
+)
 
 // Claims es la información que viaja dentro del JWT.
 type Claims struct {
@@ -26,11 +25,43 @@ type Claims struct {
 
 // AuthService maneja login, generación/validación de tokens y el CRUD de usuarios.
 type AuthService struct {
-	repo storage.UsuarioRepository
+	repo          storage.UsuarioRepository
+	secretoJWT    []byte
+	duracionToken time.Duration
 }
 
-func NewAuthService(repo storage.UsuarioRepository) *AuthService {
-	return &AuthService{repo: repo}
+type AuthOption func(*AuthService)
+
+func NewAuthService(repo storage.UsuarioRepository, opts ...AuthOption) *AuthService {
+	s := &AuthService{
+		repo:          repo,
+		secretoJWT:    []byte(secretoJWTDefecto),
+		duracionToken: duracionTokenDefecto,
+	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
+}
+
+// WithSecreto permite inyectar la clave JWT desde config/env.
+// Así el secreto no queda obligado a vivir fijo dentro del código fuente.
+func WithSecreto(secreto []byte) AuthOption {
+	return func(s *AuthService) {
+		if len(secreto) > 0 {
+			s.secretoJWT = secreto
+		}
+	}
+}
+
+// WithDuracionToken permite configurar cuánto tiempo vive el JWT.
+// Si se pasa una duración inválida, se conserva el valor por defecto.
+func WithDuracionToken(duracion time.Duration) AuthOption {
+	return func(s *AuthService) {
+		if duracion > 0 {
+			s.duracionToken = duracion
+		}
+	}
 }
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
@@ -64,12 +95,12 @@ func (s *AuthService) generarToken(u models.Usuario) (string, error) {
 		UsuarioID: u.ID,
 		Rol:       u.Rol,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(duracionToken)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.duracionToken)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(secretJWT)
+	return token.SignedString(s.secretoJWT)
 }
 
 // ValidarToken decodifica y verifica un JWT. La usará el middleware de auth
@@ -79,7 +110,7 @@ func (s *AuthService) ValidarToken(tokenStr string) (Claims, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, ErrCredencialesInvalidas
 		}
-		return secretJWT, nil
+		return s.secretoJWT, nil
 	})
 	if err != nil || !token.Valid {
 		return Claims{}, ErrCredencialesInvalidas
