@@ -162,3 +162,38 @@ func TestCrearAcceso_ClienteConMembresiaNoRegistraAcceso(t *testing.T) {
 		t.Error("CrearAcceso NO debió llegar al repositorio: el cliente tiene membresía")
 	}
 }
+
+// TestCrearAcceso_ConPagoRegistraAcceso prueba el camino feliz: un cliente sin
+// membresía pero con pago de entrada sí llega al repositorio y queda autorizado.
+func TestCrearAcceso_ConPagoRegistraAcceso(t *testing.T) {
+	repo := &mockSeguridadRepo{}
+	clientes := &mockClienteRepo{
+		clientes: map[int]models.Cliente{
+			2: {ID: 2, Nombre: "Luis Pino", Membresia: "ninguna"},
+		},
+	}
+	pagos := &mockPagoRepo{tienePago: true}
+
+	svc := NewSeguridadService(repo, clientes, pagos)
+
+	creado, err := svc.CrearAcceso(2)
+	if err != nil {
+		t.Fatalf("no se esperaba error, se obtuvo: %v", err)
+	}
+
+	if !repo.crearAccesoLlamado {
+		t.Fatal("CrearAcceso debió llegar al repositorio porque el cliente tiene pago")
+	}
+
+	if creado.ClienteID != 2 {
+		t.Errorf("cliente_id inesperado: %d", creado.ClienteID)
+	}
+
+	if !creado.Autorizado {
+		t.Error("se esperaba que el acceso quede autorizado")
+	}
+
+	if creado.NombreCliente != "Luis Pino" {
+		t.Errorf("nombre_cliente inesperado: %s", creado.NombreCliente)
+	}
+}
