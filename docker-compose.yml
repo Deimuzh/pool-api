@@ -1,0 +1,43 @@
+services:
+  # Base de datos PostgreSQL usada cuando la API corre con Docker.
+  postgres:
+    image: postgres:16-alpine
+    container_name: piscina-postgres
+    environment:
+      POSTGRES_DB: piscina
+      POSTGRES_USER: piscina
+      POSTGRES_PASSWORD: piscina123
+    volumes:
+      # Volumen persistente: conserva los datos aunque el contenedor se reinicie.
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      # La API espera a que PostgreSQL esté listo antes de arrancar.
+      test: ["CMD-SHELL", "pg_isready -U piscina -d piscina"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # API Go de la piscina. Se construye con el Dockerfile local.
+  piscina-api:
+    build: .
+    container_name: piscina-api
+    ports:
+      - "8080:8080"
+    environment:
+      # Dentro de Docker usamos PostgreSQL. En local se puede usar SQLite con .env.
+      PUERTO: ":8080"
+      DB_DRIVER: postgres
+      DB_DSN: "host=postgres user=piscina password=piscina123 dbname=piscina port=5432 sslmode=disable TimeZone=America/Guayaquil"
+      RUTA_DB: piscina.db
+      JWT_SECRETO: "cambia-esto-en-produccion"
+      JWT_DURACION: 24h
+      HTTP_READ_TIMEOUT: 10s
+      HTTP_WRITE_TIMEOUT: 10s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres-data:

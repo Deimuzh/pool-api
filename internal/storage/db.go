@@ -3,7 +3,7 @@ package storage
 import (
 	"log"
 
-	"piscina-comunitaria-api/internal/models"
+	"pool-api/internal/models"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

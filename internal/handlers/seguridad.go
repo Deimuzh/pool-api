@@ -4,352 +4,195 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"time"
 
-	"piscina-comunitaria-api/internal/models"
-	"piscina-comunitaria-api/internal/storage"
+	"pool-api/internal/models"
 
 	"github.com/go-chi/chi/v5"
 )
 
 // ─── GUARDAVIDA ──────────────────────────────────────────────────────────────
 
-// CrearGuardavida maneja POST /api/v1/guardavidas
-func CrearGuardavida(w http.ResponseWriter, r *http.Request) {
-	var g models.Guardavida
+// ListarGuardavidas atiende GET /api/v1/guardavidas.
+func (s *Server) ListarGuardavidas(w http.ResponseWriter, _ *http.Request) {
+	RespondJSON(w, http.StatusOK, s.Seguridad.ListarGuardavidas())
+}
 
-	// Decodificar el JSON del body
+// ObtenerGuardavida atiende GET /api/v1/guardavidas/{id}.
+func (s *Server) ObtenerGuardavida(w http.ResponseWriter, r *http.Request) {
+	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
+		return
+	}
+	g, ok := s.Seguridad.ObtenerGuardavida(uint(idInt))
+	if !ok {
+		RespondError(w, http.StatusNotFound, "guardavida no encontrado")
+		return
+	}
+	RespondJSON(w, http.StatusOK, g)
+}
+
+// CrearGuardavida atiende POST /api/v1/guardavidas.
+func (s *Server) CrearGuardavida(w http.ResponseWriter, r *http.Request) {
+	var g models.Guardavida
 	if err := json.NewDecoder(r.Body).Decode(&g); err != nil {
-		http.Error(w, "JSON inválido", http.StatusBadRequest)
+		RespondError(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
 		return
 	}
-
-	// Validación básica de campos requeridos
-	if g.Nombre == "" || g.Turno == "" {
-		http.Error(w, "nombre y turno son obligatorios", http.StatusBadRequest)
-		return
-	}
-
-	g.CreadoEn = time.Now()
-
-	if err := storage.DB.Create(&g).Error; err != nil {
-		http.Error(w, "Error al guardar guardavida", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated) // 201
-	json.NewEncoder(w).Encode(g)
-}
-
-// ListarGuardavidas maneja GET /api/v1/guardavidas
-func ListarGuardavidas(w http.ResponseWriter, r *http.Request) {
-	var guardavidas []models.Guardavida
-
-	if err := storage.DB.Find(&guardavidas).Error; err != nil {
-		http.Error(w, "Error al obtener guardavidas", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK) // 200
-	json.NewEncoder(w).Encode(guardavidas)
-}
-
-// ObtenerGuardavida maneja GET /api/v1/guardavidas/{id}
-func ObtenerGuardavida(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
+	creado, err := s.Seguridad.CrearGuardavida(g)
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		RespondError(w, statusDeError(err), err.Error())
 		return
 	}
-
-	var g models.Guardavida
-	if err := storage.DB.First(&g, id).Error; err != nil {
-		http.Error(w, "Guardavida no encontrado", http.StatusNotFound) // 404
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(g)
+	RespondJSON(w, http.StatusCreated, creado)
 }
 
-// ActualizarGuardavida reemplaza todos los campos del guardavida por los del body
-func ActualizarGuardavida(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
+// ActualizarGuardavida atiende PUT /api/v1/guardavidas/{id}.
+func (s *Server) ActualizarGuardavida(w http.ResponseWriter, r *http.Request) {
+	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
 		return
 	}
-
-	// Verificar que existe
 	var g models.Guardavida
-	if err := storage.DB.First(&g, id).Error; err != nil {
-		http.Error(w, "Guardavida no encontrado", http.StatusNotFound)
-		return
-	}
-
-	// Decodificar los campos a actualizar
 	if err := json.NewDecoder(r.Body).Decode(&g); err != nil {
-		http.Error(w, "JSON inválido", http.StatusBadRequest)
+		RespondError(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
 		return
 	}
-
-	if err := storage.DB.Model(&g).Updates(&g).Error; err != nil {
-    http.Error(w, "Error al actualizar guardavida", http.StatusInternalServerError)
-    return
-}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(g)
-}
-
-// EliminarGuardavida maneja DELETE /api/v1/guardavidas/{id}
-func EliminarGuardavida(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
+	actualizado, err := s.Seguridad.ActualizarGuardavida(uint(idInt), g)
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		RespondError(w, statusDeError(err), err.Error())
 		return
 	}
-
-	if err := storage.DB.Delete(&models.Guardavida{}, id).Error; err != nil {
-		http.Error(w, "Error al eliminar guardavida", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"mensaje":"guardavida eliminado"}`))
+	RespondJSON(w, http.StatusOK, actualizado)
 }
 
-// ─── INCIDENTE ───────────────────────────────────────────────────────────────
+// BorrarGuardavida atiende DELETE /api/v1/guardavidas/{id}.
+func (s *Server) BorrarGuardavida(w http.ResponseWriter, r *http.Request) {
+	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
+		return
+	}
+	if err := s.Seguridad.BorrarGuardavida(uint(idInt)); err != nil {
+		RespondError(w, statusDeError(err), err.Error())
+		return
+	}
+	RespondJSON(w, http.StatusNoContent, nil)
+}
 
-// CrearIncidente registra un nuevo incidente vinculado a un guardavida
-func CrearIncidente(w http.ResponseWriter, r *http.Request) {
+// ─── INCIDENTE ────────────────────────────────────────────────────────────────
+
+// ListarIncidentes atiende GET /api/v1/incidentes.
+func (s *Server) ListarIncidentes(w http.ResponseWriter, _ *http.Request) {
+	RespondJSON(w, http.StatusOK, s.Seguridad.ListarIncidentes())
+}
+
+// ObtenerIncidente atiende GET /api/v1/incidentes/{id}.
+func (s *Server) ObtenerIncidente(w http.ResponseWriter, r *http.Request) {
+	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
+		return
+	}
+	inc, ok := s.Seguridad.ObtenerIncidente(uint(idInt))
+	if !ok {
+		RespondError(w, http.StatusNotFound, "incidente no encontrado")
+		return
+	}
+	RespondJSON(w, http.StatusOK, inc)
+}
+
+// CrearIncidente atiende POST /api/v1/incidentes.
+func (s *Server) CrearIncidente(w http.ResponseWriter, r *http.Request) {
 	var inc models.Incidente
-
 	if err := json.NewDecoder(r.Body).Decode(&inc); err != nil {
-		http.Error(w, "JSON inválido", http.StatusBadRequest)
+		RespondError(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
 		return
 	}
-
-	if inc.Tipo == "" || inc.Gravedad == "" || inc.GuardavidaID == 0 {
-		http.Error(w, "tipo, gravedad y guardavida_id son obligatorios", http.StatusBadRequest)
-		return
-	}
-
-	// Verificar que el guardavida existe
-	var g models.Guardavida
-	if err := storage.DB.First(&g, inc.GuardavidaID).Error; err != nil {
-		http.Error(w, "guardavida_id no existe", http.StatusBadRequest)
-
-		return
-	}
-
-	inc.FechaHora = time.Now()
-
-	if err := storage.DB.Create(&inc).Error; err != nil {
-		http.Error(w, "Error al guardar incidente", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated) // 201 - debe ir antes del Encode, si no Go ignora el status
-	json.NewEncoder(w).Encode(g)
-}
-
-// ListarIncidentes retorna todos los incidentes registrados
-func ListarIncidentes(w http.ResponseWriter, r *http.Request)  {
-	var incidentes []models.Incidente
-
-	if err := storage.DB.Find(&incidentes).Error; err != nil {
-		http.Error(w, "Error al obtener incidentes", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(incidentes)
-}
-
-// ObtenerIncidente maneja GET /api/v1/incidentes/{id}
-func ObtenerIncidente(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
+	creado, err := s.Seguridad.CrearIncidente(inc)
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		RespondError(w, statusDeError(err), err.Error())
 		return
 	}
-
-	var inc models.Incidente
-	if err := storage.DB.First(&inc, id).Error; err != nil {
-		http.Error(w, "Incidente no encontrado", http.StatusNotFound)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(inc)
+	RespondJSON(w, http.StatusCreated, creado)
 }
 
-// ActualizarIncidente maneja PATCH /api/v1/incidentes/{id}
-func ActualizarIncidente(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
+// ActualizarIncidente atiende PUT /api/v1/incidentes/{id}.
+func (s *Server) ActualizarIncidente(w http.ResponseWriter, r *http.Request) {
+	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
 		return
 	}
-
 	var inc models.Incidente
-	if err := storage.DB.First(&inc, id).Error; err != nil {
-		http.Error(w, "Incidente no encontrado", http.StatusNotFound)
-		return
-	}
-
 	if err := json.NewDecoder(r.Body).Decode(&inc); err != nil {
-		http.Error(w, "JSON inválido", http.StatusBadRequest)
+		RespondError(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
 		return
 	}
-
-	if err := storage.DB.Model(&inc).Updates(&inc).Error; err != nil {
-    http.Error(w, "Error al actualizar incidente", http.StatusInternalServerError)
-    return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(inc)
-}
-
-// EliminarIncidente maneja DELETE /api/v1/incidentes/{id}
-func EliminarIncidente(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
+	actualizado, err := s.Seguridad.ActualizarIncidente(uint(idInt), inc)
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		RespondError(w, statusDeError(err), err.Error())
 		return
 	}
-
-	if err := storage.DB.Delete(&models.Incidente{}, id).Error; err != nil {
-		http.Error(w, "Error al eliminar incidente", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"mensaje":"incidente eliminado"}`))
+	RespondJSON(w, http.StatusOK, actualizado)
 }
 
-// ─── ACCESO CLIENTE ──────────────────────────────────────────────────────────
-
-// CrearAcceso registra el ingreso de un cliente a la piscina
-func CrearAcceso(w http.ResponseWriter, r *http.Request) {
-	var acc models.AccesoCliente
-
-	if err := json.NewDecoder(r.Body).Decode(&acc); err != nil {
-		http.Error(w, "JSON inválido", http.StatusBadRequest)
-		return
-	}
-
-	if acc.ClienteID == 0 {
-		http.Error(w, "cliente_id es obligatorio", http.StatusBadRequest)
-		return
-	}
-
-	acc.FechaHora = time.Now()
-
-	if err := storage.DB.Create(&acc).Error; err != nil {
-		http.Error(w, "Error al registrar acceso", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(acc)
-}
-
-// ListarAccesos retorna todos los registros de acceso a la piscina
-func ListarAccesos(w http.ResponseWriter, r *http.Request) {
-	var accesos []models.AccesoCliente
-
-	if err := storage.DB.Find(&accesos).Error; err != nil {
-		http.Error(w, "Error al obtener accesos", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(accesos)
-}
-
-// ObtenerAcceso retorna un registro de acceso por su ID
-func ObtenerAcceso(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
+// BorrarIncidente atiende DELETE /api/v1/incidentes/{id}.
+func (s *Server) BorrarIncidente(w http.ResponseWriter, r *http.Request) {
+	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
 		return
 	}
-
-	var acc models.AccesoCliente
-	if err := storage.DB.First(&acc, id).Error; err != nil {
-		http.Error(w, "Acceso no encontrado", http.StatusNotFound)
+	if err := s.Seguridad.BorrarIncidente(uint(idInt)); err != nil {
+		RespondError(w, statusDeError(err), err.Error())
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(acc)
+	RespondJSON(w, http.StatusNoContent, nil)
 }
 
-// ActualizarAcceso maneja PATCH /api/v1/accesos/{id}
-func ActualizarAcceso(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
+// ─── ACCESO CLIENTE ───────────────────────────────────────────────────────────
+
+// accesoRequest es el body esperado para registrar un acceso: solo se
+// necesita el cliente_id, porque CrearAcceso decide Autorizado/Motivo
+// internamente según si el cliente tiene un pago de entrada registrado.
+type accesoRequest struct {
+	ClienteID uint `json:"cliente_id"`
+}
+
+// ListarAccesos atiende GET /api/v1/accesos.
+func (s *Server) ListarAccesos(w http.ResponseWriter, _ *http.Request) {
+	RespondJSON(w, http.StatusOK, s.Seguridad.ListarAccesos())
+}
+
+// CrearAcceso atiende POST /api/v1/accesos.
+// Esta es la regla de negocio central del módulo: el acceso solo se autoriza
+// si el cliente existe y tiene un pago de entrada registrado.
+func (s *Server) CrearAcceso(w http.ResponseWriter, r *http.Request) {
+	var body accesoRequest
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		RespondError(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
+		return
+	}
+	creado, err := s.Seguridad.CrearAcceso(body.ClienteID)
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		RespondError(w, statusDeError(err), err.Error())
 		return
 	}
-
-	var acc models.AccesoCliente
-	if err := storage.DB.First(&acc, id).Error; err != nil {
-		http.Error(w, "Acceso no encontrado", http.StatusNotFound)
-		return
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&acc); err != nil {
-		http.Error(w, "JSON inválido", http.StatusBadRequest)
-		return
-	}
-
-	if err := storage.DB.Model(&acc).Updates(&acc).Error; err != nil {
-    http.Error(w, "Error al actualizar acceso", http.StatusInternalServerError)
-    return
+	RespondJSON(w, http.StatusCreated, creado)
 }
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(acc)
-}
-
-// EliminarAcceso maneja DELETE /api/v1/accesos/{id}
-func EliminarAcceso(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
+// BorrarAcceso atiende DELETE /api/v1/accesos/{id}.
+func (s *Server) BorrarAcceso(w http.ResponseWriter, r *http.Request) {
+	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
 		return
 	}
-
-	if err := storage.DB.Delete(&models.AccesoCliente{}, id).Error; err != nil {
-		http.Error(w, "Error al eliminar acceso", http.StatusInternalServerError)
+	if err := s.Seguridad.BorrarAcceso(uint(idInt)); err != nil {
+		RespondError(w, statusDeError(err), err.Error())
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"mensaje":"acceso eliminado"}`))
+	RespondJSON(w, http.StatusNoContent, nil)
 }

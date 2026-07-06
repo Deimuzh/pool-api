@@ -4,333 +4,206 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"time"
 
-	"piscina-comunitaria-api/internal/models"
-	"piscina-comunitaria-api/internal/storage"
+	"pool-api/internal/models"
 
 	"github.com/go-chi/chi/v5"
 )
 
-//EQUIPOS DE MANTENIMIENTO 
-func CrearEquipo(w http.ResponseWriter, r *http.Request) {
-	var eq models.Equipo
+// ─── EQUIPO ──────────────────────────────────────────────────────────────────
 
+func (s *Server) ListarEquipos(w http.ResponseWriter, _ *http.Request) {
+	RespondJSON(w, http.StatusOK, s.Mantenimiento.ListarEquipos())
+}
+
+func (s *Server) ObtenerEquipo(w http.ResponseWriter, r *http.Request) {
+	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
+		return
+	}
+	eq, ok := s.Mantenimiento.ObtenerEquipo(uint(idInt))
+	if !ok {
+		RespondError(w, http.StatusNotFound, "equipo no encontrado")
+		return
+	}
+	RespondJSON(w, http.StatusOK, eq)
+}
+
+func (s *Server) CrearEquipo(w http.ResponseWriter, r *http.Request) {
+	var eq models.Equipo
 	if err := json.NewDecoder(r.Body).Decode(&eq); err != nil {
-		http.Error(w, "JSON inválido", http.StatusBadRequest)
+		RespondError(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
 		return
 	}
-
-	if eq.Nombre == "" || eq.Tipo == "" {
-		http.Error(w, "nombre y tipo son obligatorios", http.StatusBadRequest)
-		return
-	}
-
-	if eq.Estado == "" {
-		eq.Estado = "operativo"
-	}
-
-	if err := storage.DB.Create(&eq).Error; err != nil {
-		http.Error(w, "Error al guardar equipo", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(eq)
-}
-
-// ListarEquipos retorna todos los equipos registrados
-func ListarEquipos(w http.ResponseWriter, r *http.Request) {
-	var equipos []models.Equipo
-
-	if err := storage.DB.Find(&equipos).Error; err != nil {
-		http.Error(w, "Error al obtener equipos", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(equipos)
-}
-
-func ObtenerEquipo(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
+	creado, err := s.Mantenimiento.CrearEquipo(eq)
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		RespondError(w, statusDeError(err), err.Error())
 		return
 	}
-
-	var eq models.Equipo
-	if err := storage.DB.First(&eq, id).Error; err != nil {
-		http.Error(w, "Equipo no encontrado", http.StatusNotFound)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(eq)
+	RespondJSON(w, http.StatusCreated, creado)
 }
 
-// ActualizarEquipo maneja PATCH /api/v1/equipos/{id}
-func ActualizarEquipo(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
+func (s *Server) ActualizarEquipo(w http.ResponseWriter, r *http.Request) {
+	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
 		return
 	}
-
 	var eq models.Equipo
-	if err := storage.DB.First(&eq, id).Error; err != nil {
-		http.Error(w, "Equipo no encontrado", http.StatusNotFound)
-		return
-	}
-
 	if err := json.NewDecoder(r.Body).Decode(&eq); err != nil {
-		http.Error(w, "JSON inválido", http.StatusBadRequest)
+		RespondError(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
 		return
 	}
-
-	if err := storage.DB.Save(&eq).Error; err != nil {
-		http.Error(w, "Error al actualizar equipo", http.StatusInternalServerError)
+	actualizado, err := s.Mantenimiento.ActualizarEquipo(uint(idInt), eq)
+	if err != nil {
+		RespondError(w, statusDeError(err), err.Error())
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(eq)
+	RespondJSON(w, http.StatusOK, actualizado)
 }
 
-func EliminarEquipo(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
+func (s *Server) BorrarEquipo(w http.ResponseWriter, r *http.Request) {
+	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
 		return
 	}
-
-	if err := storage.DB.Delete(&models.Equipo{}, id).Error; err != nil {
-		http.Error(w, "Error al eliminar equipo", http.StatusInternalServerError)
+	if err := s.Mantenimiento.BorrarEquipo(uint(idInt)); err != nil {
+		RespondError(w, statusDeError(err), err.Error())
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"mensaje":"equipo eliminado"}`))
+	RespondJSON(w, http.StatusOK, map[string]string{"mensaje": "equipo eliminado"})
 }
 
 // ─── REGISTRO MANTENIMIENTO ──────────────────────────────────────────────────
 
-// CrearRegistroMantenimiento maneja POST /api/v1/mantenimientos
-func CrearRegistroMantenimiento(w http.ResponseWriter, r *http.Request) {
-	var rm models.RegistroMantenimiento
+func (s *Server) ListarRegistrosMantenimiento(w http.ResponseWriter, _ *http.Request) {
+	RespondJSON(w, http.StatusOK, s.Mantenimiento.ListarRegistros())
+}
 
+func (s *Server) ObtenerRegistroMantenimiento(w http.ResponseWriter, r *http.Request) {
+	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
+		return
+	}
+	rm, ok := s.Mantenimiento.ObtenerRegistro(uint(idInt))
+	if !ok {
+		RespondError(w, http.StatusNotFound, "registro no encontrado")
+		return
+	}
+	RespondJSON(w, http.StatusOK, rm)
+}
+
+func (s *Server) CrearRegistroMantenimiento(w http.ResponseWriter, r *http.Request) {
+	var rm models.RegistroMantenimiento
 	if err := json.NewDecoder(r.Body).Decode(&rm); err != nil {
-		http.Error(w, "JSON inválido", http.StatusBadRequest)
+		RespondError(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
 		return
 	}
-
-	if rm.EquipoID == 0 || rm.Tipo == "" {
-		http.Error(w, "equipo_id y tipo son obligatorios", http.StatusBadRequest)
-		return
-	}
-
-	rm.FechaHora = time.Now()
-
-	if err := storage.DB.Create(&rm).Error; err != nil {
-		http.Error(w, "Error al guardar registro", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(rm)
-}
-
-// ListarRegistrosMantenimiento retorna todos los registros
-func ListarRegistrosMantenimiento(w http.ResponseWriter, r *http.Request) {
-	var registros []models.RegistroMantenimiento
-
-	if err := storage.DB.Find(&registros).Error; err != nil {
-		http.Error(w, "Error al obtener registros", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(registros)
-}
-
-func ObtenerRegistroMantenimiento(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
+	creado, err := s.Mantenimiento.CrearRegistro(rm)
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		RespondError(w, statusDeError(err), err.Error())
 		return
 	}
-
-	var rm models.RegistroMantenimiento
-	if err := storage.DB.First(&rm, id).Error; err != nil {
-		http.Error(w, "Registro no encontrado", http.StatusNotFound)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(rm)
+	RespondJSON(w, http.StatusCreated, creado)
 }
 
-// ActualizarRegistroMantenimiento maneja PATCH /api/v1/mantenimientos/{id}
-func ActualizarRegistroMantenimiento(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
+func (s *Server) ActualizarRegistroMantenimiento(w http.ResponseWriter, r *http.Request) {
+	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
 		return
 	}
-
 	var rm models.RegistroMantenimiento
-	if err := storage.DB.First(&rm, id).Error; err != nil {
-		http.Error(w, "Registro no encontrado", http.StatusNotFound)
-		return
-	}
-
 	if err := json.NewDecoder(r.Body).Decode(&rm); err != nil {
-		http.Error(w, "JSON inválido", http.StatusBadRequest)
+		RespondError(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
 		return
 	}
-
-	if err := storage.DB.Save(&rm).Error; err != nil {
-		http.Error(w, "Error al actualizar registro", http.StatusInternalServerError)
+	actualizado, err := s.Mantenimiento.ActualizarRegistro(uint(idInt), rm)
+	if err != nil {
+		RespondError(w, statusDeError(err), err.Error())
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(rm)
+	RespondJSON(w, http.StatusOK, actualizado)
 }
 
-func EliminarRegistroMantenimiento(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
+func (s *Server) BorrarRegistroMantenimiento(w http.ResponseWriter, r *http.Request) {
+	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
 		return
 	}
-
-	if err := storage.DB.Delete(&models.RegistroMantenimiento{}, id).Error; err != nil {
-		http.Error(w, "Error al eliminar registro", http.StatusInternalServerError)
+	if err := s.Mantenimiento.BorrarRegistro(uint(idInt)); err != nil {
+		RespondError(w, statusDeError(err), err.Error())
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"mensaje":"registro eliminado"}`))
+	RespondJSON(w, http.StatusOK, map[string]string{"mensaje": "registro eliminado"})
 }
 
 // ─── PRODUCTO QUIMICO ────────────────────────────────────────────────────────
 
-// CrearProductoQuimico maneja POST /api/v1/quimicos
-func CrearProductoQuimico(w http.ResponseWriter, r *http.Request) {
-	var pq models.ProductoQuimico
-
-	if err := json.NewDecoder(r.Body).Decode(&pq); err != nil {
-		http.Error(w, "JSON inválido", http.StatusBadRequest)
-		return
-	}
-
-	if pq.Nombre == "" {
-		http.Error(w, "nombre es obligatorio", http.StatusBadRequest)
-		return
-	}
-
-	if err := storage.DB.Create(&pq).Error; err != nil {
-		http.Error(w, "Error al guardar producto", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(pq)
+func (s *Server) ListarQuimicos(w http.ResponseWriter, _ *http.Request) {
+	RespondJSON(w, http.StatusOK, s.Mantenimiento.ListarQuimicos())
 }
 
-// ListarProductosQuimicos retorna todos los productos quimicos
-func ListarProductosQuimicos(w http.ResponseWriter, r *http.Request) {
-	var productos []models.ProductoQuimico
-
-	if err := storage.DB.Find(&productos).Error; err != nil {
-		http.Error(w, "Error al obtener productos", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(productos)
-}
-
-func ObtenerProductoQuimico(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
+func (s *Server) ObtenerQuimico(w http.ResponseWriter, r *http.Request) {
+	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
 		return
 	}
-
-	var pq models.ProductoQuimico
-	if err := storage.DB.First(&pq, id).Error; err != nil {
-		http.Error(w, "Producto no encontrado", http.StatusNotFound)
+	q, ok := s.Mantenimiento.ObtenerQuimico(uint(idInt))
+	if !ok {
+		RespondError(w, http.StatusNotFound, "producto no encontrado")
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(pq)
+	RespondJSON(w, http.StatusOK, q)
 }
 
-// ActualizarProductoQuimico maneja PATCH /api/v1/quimicos/{id}
-func ActualizarProductoQuimico(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
+func (s *Server) CrearQuimico(w http.ResponseWriter, r *http.Request) {
+	var q models.ProductoQuimico
+	if err := json.NewDecoder(r.Body).Decode(&q); err != nil {
+		RespondError(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
+		return
+	}
+	creado, err := s.Mantenimiento.CrearQuimico(q)
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		RespondError(w, statusDeError(err), err.Error())
 		return
 	}
-
-	var pq models.ProductoQuimico
-	if err := storage.DB.First(&pq, id).Error; err != nil {
-		http.Error(w, "Producto no encontrado", http.StatusNotFound)
-		return
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&pq); err != nil {
-		http.Error(w, "JSON inválido", http.StatusBadRequest)
-		return
-	}
-
-	if err := storage.DB.Save(&pq).Error; err != nil {
-		http.Error(w, "Error al actualizar producto", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(pq)
+	RespondJSON(w, http.StatusCreated, creado)
 }
 
-// EliminarProductoQuimico maneja DELETE /api/v1/quimicos/{id}
-func EliminarProductoQuimico(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.Atoi(idStr)
+func (s *Server) ActualizarQuimico(w http.ResponseWriter, r *http.Request) {
+	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
 		return
 	}
-
-	if err := storage.DB.Delete(&models.ProductoQuimico{}, id).Error; err != nil {
-		http.Error(w, "Error al eliminar producto", http.StatusInternalServerError)
+	var q models.ProductoQuimico
+	if err := json.NewDecoder(r.Body).Decode(&q); err != nil {
+		RespondError(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
 		return
 	}
+	actualizado, err := s.Mantenimiento.ActualizarQuimico(uint(idInt), q)
+	if err != nil {
+		RespondError(w, statusDeError(err), err.Error())
+		return
+	}
+	RespondJSON(w, http.StatusOK, actualizado)
+}
 
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"mensaje":"producto eliminado"}`))
+func (s *Server) BorrarQuimico(w http.ResponseWriter, r *http.Request) {
+	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
+		return
+	}
+	if err := s.Mantenimiento.BorrarQuimico(uint(idInt)); err != nil {
+		RespondError(w, statusDeError(err), err.Error())
+		return
+	}
+	RespondJSON(w, http.StatusOK, map[string]string{"mensaje": "producto eliminado"})
 }
