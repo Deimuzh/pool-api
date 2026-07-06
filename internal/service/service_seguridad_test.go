@@ -19,11 +19,14 @@ import (
 type mockSeguridadRepo struct {
 	crearAccesoLlamado bool
 	accesoRecibido     models.AccesoCliente
+	guardavidas        map[int]models.Guardavida
 }
 
 func (m *mockSeguridadRepo) ListarGuardavidas() []models.Guardavida { return nil }
 func (m *mockSeguridadRepo) BuscarGuardavidaPorID(id uint) (models.Guardavida, bool) {
-	return models.Guardavida{}, false
+	g, ok := m.guardavidas[int(id)]
+	return g, ok
+
 }
 func (m *mockSeguridadRepo) CrearGuardavida(g models.Guardavida) models.Guardavida { return g }
 func (m *mockSeguridadRepo) ActualizarGuardavida(id uint, datos models.Guardavida) (models.Guardavida, bool) {
@@ -219,5 +222,33 @@ func TestCrearIncidente_GuardavidaInvalidoNoLlegaAlRepo(t *testing.T) {
 	})
 	if err != ErrGuardavidaInvalido {
 		t.Fatalf("se esperaba ErrGuardavidaInvalido, se obtuvo: %v", err)
+	}
+}
+
+// TestCrearIncidente_ClienteSinAccesoNoLlegaAlRepo prueba que un cliente sin
+// membresía y sin acceso registrado no puede asociarse a un incidente.
+func TestCrearIncidente_ClienteSinAccesoNoLlegaAlRepo(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		guardavidas: map[int]models.Guardavida{
+			1: {ID: 1, Nombre: "Carlos Mendoza"},
+		},
+	}
+	clientes := &mockClienteRepo{
+		clientes: map[int]models.Cliente{
+			2: {ID: 2, Nombre: "Luis Pino", Membresia: "ninguna"},
+		},
+	}
+	pagos := &mockPagoRepo{tienePago: false}
+
+	svc := NewSeguridadService(repo, clientes, pagos)
+
+	_, err := svc.CrearIncidente(models.Incidente{
+		Tipo:         "lesion",
+		Gravedad:     "leve",
+		GuardavidaID: 1,
+		ClienteID:    2,
+	})
+	if err != ErrClienteSinAcceso {
+		t.Fatalf("se esperaba ErrClienteSinAcceso, se obtuvo: %v", err)
 	}
 }
