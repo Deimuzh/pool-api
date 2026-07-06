@@ -113,6 +113,8 @@ func run(cfg config.Config) error {
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.Auth(authSvc))
 
+			// A partir de este grupo, todas las rutas requieren un JWT válido.
+			// Si el token falta o no pasa la validación, la request se corta antes del handler.
 			// Usuarios (gestión de cuentas de administrador)
 			r.Route("/usuarios", func(r chi.Router) {
 				r.Use(middleware.SoloRoles("admin"))
