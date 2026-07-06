@@ -138,3 +138,27 @@ func TestCrearAcceso_ClienteInexistenteNoLlegaAlRepo(t *testing.T) {
 		t.Error("CrearAcceso NO debió llegar al repositorio: el cliente_id no existe")
 	}
 }
+
+// TestCrearAcceso_ClienteConMembresiaNoRegistraAcceso prueba que el flujo de
+// acceso diario rechaza clientes con membresía, porque ellos no necesitan pagar
+// entrada diaria.
+func TestCrearAcceso_ClienteConMembresiaNoRegistraAcceso(t *testing.T) {
+	repo := &mockSeguridadRepo{}
+	clientes := &mockClienteRepo{
+		clientes: map[int]models.Cliente{
+			1: {ID: 1, Nombre: "Ana Reyes", Membresia: "mensual"},
+		},
+	}
+	pagos := &mockPagoRepo{tienePago: true}
+
+	svc := NewSeguridadService(repo, clientes, pagos)
+
+	_, err := svc.CrearAcceso(1)
+	if err != ErrClienteConMembresia {
+		t.Fatalf("se esperaba ErrClienteConMembresia, se obtuvo: %v", err)
+	}
+
+	if repo.crearAccesoLlamado {
+		t.Error("CrearAcceso NO debió llegar al repositorio: el cliente tiene membresía")
+	}
+}
