@@ -38,7 +38,9 @@ func (s *ClientesService) CrearCliente(c models.Cliente) (models.Cliente, error)
 	}
 	creado, err := s.repo.CrearCliente(c)
 	if err != nil {
-		if strings.Contains(err.Error(), "UNIQUE") || errors.Is(err, gorm.ErrDuplicatedKey) {
+			if strings.Contains(err.Error(), "UNIQUE") || 
+			strings.Contains(err.Error(), "SQLSTATE 23505") ||
+			errors.Is(err, gorm.ErrDuplicatedKey) {
 			return models.Cliente{}, ErrCedulaEnUso
 		}
 		return models.Cliente{}, err
