@@ -732,7 +732,7 @@ const FORMS = {
     endpoint: '/pagos',
     campos: [
       { label: 'Cliente', name: 'cliente_id', type: 'dynamic-select', source: 'clientes' },
-      { label: 'Monto ($)', name: 'monto', type: 'number', placeholder: '0.00' },
+      { label: 'Monto ($)', name: 'monto', type: 'number', placeholder: '0.00', min: '0', step: '0.01' },
       { label: 'Concepto', name: 'concepto', type: 'select', opciones: ['entrada', 'membresia', 'reserva', 'otro'] },
       { label: 'Método de pago', name: 'metodo', type: 'select', opciones: ['efectivo', 'transferencia'] },
     ],
@@ -792,9 +792,14 @@ function openModal(type, id) {
       }).join('')
       return `<div class="modal-field"><label>${c.label}</label><select name="${c.name}">${opts}</select></div>`
     }
+    const attrs = []
+    if (c.min !== undefined) attrs.push(`min="${c.min}"`)
+    if (c.max !== undefined) attrs.push(`max="${c.max}"`)
+    if (c.step !== undefined) attrs.push(`step="${c.step}"`)
     const val = valorActual !== undefined ? `value="${valorActual}"` : ''
+    const attrText = attrs.length ? `${attrs.join(' ')} ` : ''
     return `<div class="modal-field"><label>${c.label}</label>
-      <input type="${c.type}" name="${c.name}" placeholder="${c.placeholder || ''}" ${val} /></div>`
+      <input type="${c.type}" name="${c.name}" placeholder="${c.placeholder || ''}" ${attrText}${val} /></div>`
   }).join('')
 
   if (form.nota) {
@@ -854,6 +859,14 @@ async function guardarModal() {
 
   if (modalActual === 'reserva' && body.duracion_tipo === 'horas') {
     body.duracion = Number(body.duracion) * 60
+  }
+
+  if (modalActual === 'pago') {
+    const monto = Number(body.monto)
+    if (!Number.isFinite(monto) || monto <= 0) {
+      toast('El monto debe ser mayor a cero', '#a32d2d')
+      return
+    }
   }
 
   // Validación temprana en el frontend para los selects dinámicos obligatorios:
