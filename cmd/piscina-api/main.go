@@ -36,6 +36,8 @@ func main() {
 	}
 }
 
+// run concentra el arranque real de la aplicación: abre la base de datos,
+// migra modelos, construye services/handlers, registra rutas y levanta el servidor.
 func run(cfg config.Config) error {
 	// 1. Abrir la base de datos y migrar todos los modelos.
 	db, err := abrirDB(cfg)
