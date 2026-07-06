@@ -293,3 +293,18 @@ func TestCrearIncidente_ClienteConMembresiaRegistraIncidente(t *testing.T) {
 		t.Errorf("nombre_guardavida inesperado: %s", creado.NombreGuardavida)
 	}
 }
+
+// TestBorrarGuardavida_InexistenteDevuelveNoEncontrado prueba que el service
+// traduzca el false del repositorio a un error de dominio.
+func TestBorrarGuardavida_InexistenteDevuelveNoEncontrado(t *testing.T) {
+	repo := &mockSeguridadRepo{}
+	clientes := &mockClienteRepo{clientes: map[int]models.Cliente{}}
+	pagos := &mockPagoRepo{}
+
+	svc := NewSeguridadService(repo, clientes, pagos)
+
+	err := svc.BorrarGuardavida(99)
+	if err != ErrNoEncontrado {
+		t.Fatalf("se esperaba ErrNoEncontrado, se obtuvo: %v", err)
+	}
+}
