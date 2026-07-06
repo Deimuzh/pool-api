@@ -308,3 +308,23 @@ func TestBorrarGuardavida_InexistenteDevuelveNoEncontrado(t *testing.T) {
 		t.Fatalf("se esperaba ErrNoEncontrado, se obtuvo: %v", err)
 	}
 }
+
+// TestCrearIncidente_CamposObligatoriosNoLlegaAlRepo prueba que el service
+// rechaza incidentes incompletos antes de validar guardavida o cliente.
+func TestCrearIncidente_CamposObligatoriosNoLlegaAlRepo(t *testing.T) {
+	repo := &mockSeguridadRepo{}
+	clientes := &mockClienteRepo{clientes: map[int]models.Cliente{}}
+	pagos := &mockPagoRepo{}
+
+	svc := NewSeguridadService(repo, clientes, pagos)
+
+	_, err := svc.CrearIncidente(models.Incidente{
+		Tipo:         "",
+		Gravedad:     "",
+		GuardavidaID: 0,
+		ClienteID:    0,
+	})
+	if err != ErrCampoObligatorio {
+		t.Fatalf("se esperaba ErrCampoObligatorio, se obtuvo: %v", err)
+	}
+}
