@@ -4,18 +4,25 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/glebarez/sqlite" // driver GORM (pure-Go)
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
-	chcors "github.com/go-chi/cors"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
+	"pool-api/internal/config"
 	"pool-api/internal/handlers"
+	"pool-api/internal/httpserver"
 	"pool-api/internal/middleware"
 	"pool-api/internal/models"
 	"pool-api/internal/service"
@@ -23,28 +30,46 @@ import (
 )
 
 func main() {
-	// 1. Abrir la base de datos y migrar todos los modelos.
-	db, err := gorm.Open(sqlite.Open("piscina.db"), &gorm.Config{})
-	if err != nil {
-		log.Fatal("no se pudo abrir la base de datos: ", err)
+	cfg := config.Cargar()
+	if err := run(cfg); err != nil {
+		log.Fatal(err)
 	}
+}
+
+// run concentra el arranque real de la aplicación: abre la base de datos,
+// migra modelos, construye services/handlers, registra rutas y levanta el servidor.
+func run(cfg config.Config) error {
+	// 1. Abrir la base de datos y migrar todos los modelos.
+	db, err := abrirDB(cfg)
+	if err != nil {
+		return fmt.Errorf("no se pudo abrir la base de datos: %w", err)
+	}
+	// AutoMigrate crea o actualiza las tablas según los structs del dominio.
+	// Esto mantiene la persistencia sincronizada tanto en SQLite como en PostgreSQL.
 	if err := db.AutoMigrate(
 		&models.Guardavida{}, &models.Incidente{}, &models.AccesoCliente{},
 		&models.Equipo{}, &models.RegistroMantenimiento{}, &models.ProductoQuimico{},
 		&models.Cliente{}, &models.Reserva{}, &models.Pago{},
 		&models.Usuario{},
 	); err != nil {
-		log.Fatal("falló AutoMigrate: ", err)
+		return fmt.Errorf("falló AutoMigrate: %w", err)
 	}
 
 	almacen := storage.NuevoAlmacenSQLite(db)
 	almacen.SembrarSiVacio() // crea admin@piscina.com / admin123 si no existe ningún usuario
 
+	// Aquí inicia la inyección de dependencias: el almacenamiento se pasa a los services
+	// por medio de interfaces, y luego los handlers reciben esos services.
 	// 2. Construir los services.
 	seguridadSvc := service.NewSeguridadService(almacen, almacen, almacen)
 	mantenimientoSvc := service.NewMantenimientoService(almacen)
 	clientesSvc := service.NewClientesService(almacen)
-	authSvc := service.NewAuthService(almacen)
+	// AuthService recibe secreto y duración desde config para no hardcodear JWT.
+	authSvc := service.NewAuthService(
+		almacen,
+		service.WithSecreto(cfg.JWTSecreto),
+		service.WithDuracionToken(cfg.JWTDuracion),
+	)
 
 	// 3. Server con los services inyectados.
 	servidor := handlers.NewServer(seguridadSvc, mantenimientoSvc, clientesSvc, authSvc)
@@ -53,36 +78,27 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(chimw.Logger)
 	r.Use(chimw.Recoverer)
-	r.Use(chcors.Handler(chcors.Options{
-		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		AllowCredentials: true,
-		MaxAge:           300,
-	}))
+	r.Use(middleware.CORS)
 
 	// 5. Sirve el frontend (index.html) en la raíz. Sin proteger: el HTML
 	//    necesita cargar sin token para poder mostrar la pantalla de login.
 	r.Get("/", func(w http.ResponseWriter, _ *http.Request) {
-		paths := []string{
-			"./web/index.html",
-			"../web/index.html",
-			"../../web/index.html",
-		}
-		var html []byte
-		var err error
-		for _, p := range paths {
-			if _, statErr := os.Stat(p); statErr == nil {
-				html, err = os.ReadFile(p)
-				break
-			}
-		}
+		html, err := os.ReadFile("./web/index.html")
 		if err != nil {
-			http.Error(w, fmt.Sprintf("No se encontró index.html en ninguna ruta válida: %v", err), http.StatusInternalServerError)
+			http.Error(w, "No se encontró index.html en ./web/", http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Write(html)
+	})
+	r.Get("/styles.css", func(w http.ResponseWriter, _ *http.Request) {
+		css, err := os.ReadFile("./web/styles.css")
+		if err != nil {
+			http.Error(w, "No se encontró styles.css en ./web/", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/css; charset=utf-8")
+		w.Write(css)
 	})
 
 	// 6. Rutas versionadas /api/v1/.
@@ -97,8 +113,11 @@ func main() {
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.Auth(authSvc))
 
+			// A partir de este grupo, todas las rutas requieren un JWT válido.
+			// Si el token falta o no pasa la validación, la request se corta antes del handler.
 			// Usuarios (gestión de cuentas de administrador)
 			r.Route("/usuarios", func(r chi.Router) {
+				r.Use(middleware.SoloRoles("admin"))
 				r.Get("/", servidor.ListarUsuarios)
 				r.Post("/", servidor.CrearUsuario)
 				r.Get("/{id}", servidor.ObtenerUsuario)
@@ -175,7 +194,49 @@ func main() {
 		})
 	})
 
-	log.Println("Servidor escuchando en http://localhost:8080")
+	log.Printf("Motor de base de datos: %s", cfg.DBDriver)
+	log.Printf("Servidor escuchando en http://localhost%s", cfg.Puerto)
 	log.Println("Login: admin@piscina.com / admin123")
-	log.Fatal(http.ListenAndServe(":8080", r))
+
+	// Servidor HTTP con timeouts para evitar conexiones colgadas.
+	srv := httpserver.Nuevo(r, cfg.Puerto, cfg.ReadTimeout, cfg.WriteTimeout)
+	errServidor := make(chan error, 1)
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			errServidor <- err
+		}
+	}()
+
+	// Espera Ctrl+C o SIGTERM para apagar sin cortar requests en curso.
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	select {
+	case err := <-errServidor:
+		return err
+	case <-ctx.Done():
+		log.Println("Señal de apagado recibida, cerrando servidor...")
+	}
+
+	ctxApagado, cancelar := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelar()
+	if err := srv.Shutdown(ctxApagado); err != nil {
+		return err
+	}
+	log.Println("Servidor detenido correctamente.")
+	return nil
+}
+
+func abrirDB(cfg config.Config) (*gorm.DB, error) {
+	switch cfg.DBDriver {
+	case "postgres":
+		if cfg.DBDSN == "" {
+			return nil, fmt.Errorf("DB_DSN es obligatorio cuando DB_DRIVER=postgres")
+		}
+		return gorm.Open(postgres.Open(cfg.DBDSN), &gorm.Config{})
+	case "sqlite":
+		return gorm.Open(sqlite.Open(cfg.RutaDB), &gorm.Config{})
+	default:
+		return nil, fmt.Errorf("DB_DRIVER inválido: %s", cfg.DBDriver)
+	}
 }

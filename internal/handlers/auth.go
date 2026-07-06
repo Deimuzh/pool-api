@@ -64,13 +64,12 @@ func (s *Server) ListarUsuarios(w http.ResponseWriter, _ *http.Request) {
 
 // ObtenerUsuario atiende GET /api/v1/usuarios/{id}.
 func (s *Server) ObtenerUsuario(w http.ResponseWriter, r *http.Request) {
-	idUint, err := strconv.ParseUint(chi.URLParam(r, "id"), 10, 64)
+	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
 		return
 	}
-	id := uint(idUint)
-	u, ok := s.Auth.ObtenerUsuario(id)
+	u, ok := s.Auth.ObtenerUsuario(uint(idInt))
 	if !ok {
 		RespondError(w, http.StatusNotFound, "usuario no encontrado")
 		return
@@ -96,18 +95,17 @@ func (s *Server) CrearUsuario(w http.ResponseWriter, r *http.Request) {
 // ActualizarUsuario atiende PUT /api/v1/usuarios/{id}.
 // Si "password" llega vacío en el body, se conserva la contraseña actual.
 func (s *Server) ActualizarUsuario(w http.ResponseWriter, r *http.Request) {
-	idUint, err := strconv.ParseUint(chi.URLParam(r, "id"), 10, 64)
+	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
 		return
 	}
-	id := uint(idUint)
 	var body usuarioRequest
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		RespondError(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
 		return
 	}
-	actualizado, err := s.Auth.ActualizarUsuario(id, body.Nombre, body.Email, body.Password, body.Rol)
+	actualizado, err := s.Auth.ActualizarUsuario(uint(idInt), body.Nombre, body.Email, body.Password, body.Rol)
 	if err != nil {
 		RespondError(w, statusDeError(err), err.Error())
 		return
@@ -117,13 +115,12 @@ func (s *Server) ActualizarUsuario(w http.ResponseWriter, r *http.Request) {
 
 // BorrarUsuario atiende DELETE /api/v1/usuarios/{id}.
 func (s *Server) BorrarUsuario(w http.ResponseWriter, r *http.Request) {
-	idUint, err := strconv.ParseUint(chi.URLParam(r, "id"), 10, 64)
+	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
 		return
 	}
-	id := uint(idUint)
-	if err := s.Auth.BorrarUsuario(id); err != nil {
+	if err := s.Auth.BorrarUsuario(uint(idInt)); err != nil {
 		RespondError(w, statusDeError(err), err.Error())
 		return
 	}

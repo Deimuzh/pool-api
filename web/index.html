@@ -5,114 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Piscina Los Ceibos — Administración</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #f5f5f4; --surface: #ffffff; --border: #e5e5e3;
-      --text: #1c1c1a; --muted: #6b6b67; --hint: #a8a8a4;
-      --green: #0F6E56; --green-dk: #085041;
-      --radius: 10px; --radius-sm: 6px;
-    }
-    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; }
-
-    /* LOGIN */
-    #loginScreen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
-    .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2.5rem 2rem; width: 100%; max-width: 360px; }
-    .login-logo { width: 52px; height: 52px; border-radius: 14px; background: var(--green); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; }
-    .login-title { font-size: 17px; font-weight: 600; text-align: center; margin-bottom: 4px; }
-    .login-sub { font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 1.75rem; }
-    .field { margin-bottom: 1rem; }
-    .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
-    .field input { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; color: var(--text); background: var(--surface); outline: none; }
-    .field input:focus { border-color: var(--green); box-shadow: 0 0 0 3px #0F6E5620; }
-    .btn-primary { width: 100%; padding: 10px; background: var(--green); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 0.25rem; }
-    .btn-primary:hover { background: var(--green-dk); }
-    .error-msg { font-size: 12px; color: #a32d2d; text-align: center; margin-top: 10px; display: none; }
-
-    /* DASHBOARD */
-    #dashboard { display: none; }
-    .topbar { background: var(--surface); border-bottom: 1px solid var(--border); height: 52px; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 5; }
-    .topbar-left { display: flex; align-items: center; gap: 10px; }
-    .topbar-logo { width: 30px; height: 30px; border-radius: 8px; background: var(--green); display: flex; align-items: center; justify-content: center; }
-    .topbar-name { font-size: 14px; font-weight: 600; }
-    .topbar-right { display: flex; align-items: center; gap: 12px; }
-    .topbar-user { font-size: 13px; color: var(--muted); }
-    .btn-logout { font-size: 12px; padding: 5px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: transparent; cursor: pointer; color: var(--muted); }
-    .btn-logout:hover { background: var(--bg); }
-    .content { padding: 1.5rem; max-width: 1100px; margin: 0 auto; }
-
-    /* STATS */
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
-    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
-    .stat-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
-    .stat-value { font-size: 24px; font-weight: 600; }
-    .stat-sub { font-size: 11px; color: var(--hint); margin-top: 2px; }
-
-    /* TABS */
-    .nav-tabs { display: flex; gap: 4px; background: var(--border); border-radius: var(--radius-sm); padding: 3px; margin-bottom: 1.5rem; width: fit-content; }
-    .tab { padding: 7px 16px; border-radius: 5px; font-size: 13px; color: var(--muted); cursor: pointer; border: none; background: transparent; display: flex; align-items: center; gap: 6px; }
-    .tab.active { background: var(--surface); color: var(--text); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-
-    /* SECTION */
-    .section-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
-    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-    .section-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
-    .btn-add { font-size: 12px; padding: 6px 12px; background: var(--green); color: #fff; border: none; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; gap: 4px; }
-    .btn-add:hover { background: var(--green-dk); }
-
-    /* TABLE */
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th { text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 500; color: var(--muted); border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.04em; }
-    td { padding: 10px; border-bottom: 1px solid var(--border); }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #fafaf9; }
-    .empty-row td { text-align: center; color: var(--hint); padding: 2rem 0; font-size: 13px; }
-
-    /* BADGES */
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 500; }
-    .bg-green { background: #EAF3DE; color: #3B6D11; }
-    .bg-amber { background: #FAEEDA; color: #854F0B; }
-    .bg-red   { background: #FCEBEB; color: #A32D2D; }
-    .bg-blue  { background: #E6F1FB; color: #185FA5; }
-    .bg-gray  { background: #F1EFE8; color: #5F5E5A; }
-
-    .btn-icon { background: transparent; border: none; cursor: pointer; color: var(--muted); padding: 5px; border-radius: 5px; font-size: 15px; }
-    .btn-icon:hover { background: var(--bg); color: var(--text); }
-    .btn-icon.danger:hover { background: #FCEBEB; color: #A32D2D; }
-    .panel-hidden { display: none; }
-
-    /* MODAL */
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; z-index: 100; }
-    .modal-overlay.open { display: flex; }
-    .modal-box { background: var(--surface); border-radius: var(--radius); padding: 1.5rem; width: 360px; border: 1px solid var(--border); box-shadow: 0 8px 24px rgba(0,0,0,0.12); max-height: 90vh; overflow-y: auto; }
-    .modal-title { font-size: 15px; font-weight: 600; margin-bottom: 1.25rem; }
-    .modal-field { margin-bottom: 0.875rem; }
-    .modal-field label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
-    .modal-field input, .modal-field select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); color: var(--text); outline: none; }
-    .modal-field input:focus, .modal-field select:focus { border-color: var(--green); box-shadow: 0 0 0 3px #0F6E5618; }
-    .modal-actions { display: flex; gap: 8px; margin-top: 1.25rem; justify-content: flex-end; }
-    .btn-cancel { padding: 7px 14px; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: transparent; cursor: pointer; color: var(--muted); }
-    .btn-save { padding: 7px 16px; font-size: 13px; background: var(--green); color: #fff; border: none; border-radius: var(--radius-sm); cursor: pointer; font-weight: 500; }
-    .btn-save:hover { background: var(--green-dk); }
-
-    /* PRECIOS SUGERIDOS */
-    .price-group { margin-bottom: 8px; }
-    .price-group:last-child { margin-bottom: 0; }
-    .price-group-title { font-size: 11px; color: var(--muted); margin-bottom: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em; }
-    .price-table { display: flex; gap: 5px; flex-wrap: wrap; }
-    .price-option { padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 12px; cursor: pointer; }
-    .price-option:hover { border-color: var(--green); background: #0F6E5608; }
-
-    /* ALERTA ACCESO */
-    .acceso-alert { padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 1rem; display: none; }
-    .acceso-alert.denegado { background: #FCEBEB; color: #A32D2D; border: 1px solid #f5c6c6; }
-    .acceso-alert.autorizado { background: #EAF3DE; color: #3B6D11; border: 1px solid #c3dfa5; }
-
-    /* TOAST */
-    .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1c1c1a; color: #fff; padding: 10px 16px; border-radius: var(--radius-sm); font-size: 13px; z-index: 200; opacity: 0; transition: opacity 0.2s; }
-    .toast.show { opacity: 1; }
-  </style>
+  <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
 
@@ -231,9 +124,8 @@
         <div class="acceso-alert" id="accesoAlert"></div>
         <div class="table-wrap">
           <table>
-            <!-- CAMBIO: muestra nombre del cliente y si tiene pago al día -->
-            <thead><tr><th>Cliente</th><th>Pago al día</th><th>Autorizado</th><th>Motivo</th><th>Fecha / Hora</th><th></th></tr></thead>
-            <tbody id="tbAccesos"><tr class="empty-row"><td colspan="6">Cargando...</td></tr></tbody>
+            <thead><tr><th>Cliente</th><th>Pago al día</th><th>Autorizado</th><th>Fecha / Hora</th><th></th></tr></thead>
+            <tbody id="tbAccesos"><tr class="empty-row"><td colspan="5">Cargando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -294,8 +186,8 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Nombre</th><th>Cédula</th><th>Teléfono</th><th>Email</th><th>Membresía</th><th></th></tr></thead>
-            <tbody id="tbClientes"><tr class="empty-row"><td colspan="6">Cargando...</td></tr></tbody>
+            <thead><tr><th>Nombre</th><th>Cédula</th><th>Email</th><th>Membresía</th><th></th></tr></thead>
+            <tbody id="tbClientes"><tr class="empty-row"><td colspan="5">Cargando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -307,7 +199,7 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Cliente ID</th><th>Estado</th><th>Duración (min)</th><th>Fecha / Hora</th><th></th></tr></thead>
+            <thead><tr><th>Cliente ID</th><th>Estado</th><th>Duración</th><th>Fecha / Hora</th><th></th></tr></thead>
             <tbody id="tbReservas"><tr class="empty-row"><td colspan="5">Cargando...</td></tr></tbody>
           </table>
         </div>
@@ -346,9 +238,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const API = (window.location.origin && window.location.origin !== 'null')
-  ? window.location.origin + '/api/v1'
-  : 'http://localhost:8080/api/v1'
+const API = '/api/v1'
 
 // ── TOKEN ─────────────────────────────────────────────────────────────────────
 // El token se guarda solo en memoria (variable JS), no en localStorage,
@@ -365,7 +255,9 @@ async function fetchConToken(path, options = {}) {
     ...(options.headers || {}),
     'Authorization': 'Bearer ' + authToken,
   }
-  const res = await fetch(API + path, { ...options, headers })
+  // Permitir pasar una "path" absoluta (ej. URL completa) o relativa (/clientes)
+  const target = (typeof path === 'string' && (path.startsWith('http') || path.startsWith(API))) ? path : API + path
+  const res = await fetch(target, { ...options, headers })
   if (res.status === 401) {
     toast('Tu sesión expiró, inicia sesión de nuevo', '#a32d2d')
     doLogout()
@@ -449,7 +341,7 @@ async function apiFetch(path) {
   }
 }
 
-const CACHE = { clientes: [], guardavidas: [], equipos: [], quimicos: [] }
+const CACHE = { clientes: [], guardavidas: [], equipos: [], quimicos: [], pagos: [], accesos: [] }
 
 async function cargarTodo() {
   const [guardavidas, incidentes, accesos, equipos, mantenimientos, quimicos, clientes, reservas, pagos] =
@@ -469,6 +361,8 @@ async function cargarTodo() {
   CACHE.guardavidas = guardavidas
   CACHE.equipos = equipos
   CACHE.quimicos = quimicos
+  CACHE.pagos = pagos
+  CACHE.accesos = accesos
 
   document.getElementById('statGuarda').textContent     = guardavidas.length
   document.getElementById('statIncidentes').textContent = incidentes.length
@@ -530,7 +424,7 @@ function renderIncidentes(data) {
 
 function renderAccesos(data) {
   const tb = document.getElementById('tbAccesos')
-  if (!data.length) { tb.innerHTML = filaVacia(6); return }
+  if (!data.length) { tb.innerHTML = filaVacia(5); return }
   tb.innerHTML = data.map(a => `
     <tr>
       <td><strong>${a.nombre_cliente || ('ID: ' + a.cliente_id)}</strong></td>
@@ -538,7 +432,6 @@ function renderAccesos(data) {
         ? '<span class="badge bg-green"><i class="ti ti-check" style="font-size:10px"></i> Pagado</span>'
         : '<span class="badge bg-red"><i class="ti ti-x" style="font-size:10px"></i> Sin pago</span>'}</td>
       <td><span class="badge ${a.autorizado ? 'bg-green' : 'bg-red'}">${a.autorizado ? 'Autorizado' : 'Denegado'}</span></td>
-      <td style="color:var(--muted); font-size:12px">${a.motivo || '—'}</td>
       <td>${new Date(a.fecha_hora).toLocaleString('es-EC')}</td>
       <td>${btnDel('/accesos', a.id)}</td>
     </tr>`).join('')
@@ -585,13 +478,12 @@ function renderQuimicos(data) {
 
 function renderClientes(data) {
   const tb = document.getElementById('tbClientes')
-  if (!data.length) { tb.innerHTML = filaVacia(6); return }
+  if (!data.length) { tb.innerHTML = filaVacia(5); return }
   const mem = { mensual: 'bg-blue', trimestral: 'bg-blue', anual: 'bg-green', ninguna: 'bg-gray' }
   tb.innerHTML = data.map(c => `
     <tr>
       <td><strong>${c.nombre}</strong></td>
       <td>${c.cedula}</td>
-      <td style="color:var(--muted)">${c.telefono || '—'}</td>
       <td style="color:var(--muted)">${c.email || '—'}</td>
       <td><span class="badge ${mem[c.membresia?.toLowerCase()] || 'bg-gray'}">${c.membresia || 'ninguna'}</span></td>
       <td>${btnDel('/clientes', c.id)}</td>
@@ -602,17 +494,19 @@ function renderReservas(data) {
   const tb = document.getElementById('tbReservas')
   if (!data.length) { tb.innerHTML = filaVacia(5); return }
   const col = { confirmada: 'bg-green', pendiente: 'bg-amber', cancelada: 'bg-red' }
-  tb.innerHTML = data.map(rv => {
-    const duracion = rv.duracion ? (rv.duracion % 60 === 0 ? `${rv.duracion / 60} h` : `${rv.duracion} min`) : '—'
-    return `
+  tb.innerHTML = data.map(rv => `
     <tr>
       <td>${rv.cliente_id}</td>
       <td><span class="badge ${col[rv.estado?.toLowerCase()] || 'bg-gray'}">${rv.estado}</span></td>
-      <td>${duracion}</td>
+      <td>${labelDuracionReserva(rv.duracion)}</td>
       <td>${new Date(rv.fecha_hora).toLocaleString('es-EC')}</td>
       <td>${btnDel('/reservas', rv.id)}</td>
-    </tr>`
-  }).join('')
+    </tr>`).join('')
+}
+
+function labelDuracionReserva(duracion) {
+  const labels = { 720: 'Medio día', 1440: 'Un día' }
+  return labels[Number(duracion)] || '—'
 }
 
 function renderPagos(data) {
@@ -622,11 +516,16 @@ function renderPagos(data) {
     <tr>
       <td>${p.cliente_id}</td>
       <td><strong>$${Number(p.monto).toFixed(2)}</strong></td>
-      <td>${p.concepto || '—'}</td>
+      <td>${labelConceptoPago(p.concepto)}</td>
       <td>${p.metodo || '—'}</td>
       <td style="color:var(--muted)">${new Date(p.fecha_hora).toLocaleString('es-EC')}</td>
       <td>${btnDel('/pagos', p.id)}</td>
     </tr>`).join('')
+}
+
+function labelConceptoPago(concepto) {
+  const labels = { medio_dia: 'Medio día', dia: 'Un día' }
+  return labels[String(concepto || '').toLowerCase()] || (concepto || '—')
 }
 
 // ── ELIMINAR ──────────────────────────────────────────────────────────────────
@@ -662,16 +561,16 @@ const FORMS = {
       { label: 'Gravedad', name: 'gravedad', type: 'select', opciones: ['leve', 'moderado', 'grave'] },
       { label: 'Descripción', name: 'descripcion', type: 'text', placeholder: 'Descripción breve del incidente' },
       { label: 'Guardavida responsable', name: 'guardavida_id', type: 'dynamic-select', source: 'guardavidas' },
-      { label: 'Cliente involucrado (opcional)', name: 'cliente_id', type: 'dynamic-select', source: 'clientes', opcional: true },
+      { label: 'Cliente involucrado', name: 'cliente_id', type: 'dynamic-select', source: 'clientes_incidente' },
     ]
   },
   acceso: {
     titulo: 'Registrar acceso de cliente',
     endpoint: '/accesos',
     campos: [
-      { label: 'Cliente', name: 'cliente_id', type: 'dynamic-select', source: 'clientes' },
+      { label: 'Cliente', name: 'cliente_id', type: 'dynamic-select', source: 'clientes_acceso' },
     ],
-    nota: '⚠️ El sistema verificará automáticamente si el cliente tiene pago de entrada registrado.'
+    nota: '⚠️ Solo aparecen clientes sin membresía con pago registrado.'
   },
   equipo: {
     titulo: 'Equipo',
@@ -714,36 +613,38 @@ const FORMS = {
       { label: 'Teléfono', name: 'telefono', type: 'text', placeholder: '099XXXXXXX' },
       { label: 'Membresía', name: 'membresia', type: 'select', opciones: ['ninguna', 'mensual', 'trimestral', 'anual'] },
     ],
-    nota: 'ℹ️ Para que el cliente pueda ingresar, recuerda registrar su pago de "entrada" en la sección Pagos.'
+    nota: 'ℹ️ Los clientes con membresía ingresan libremente. Los clientes sin membresía deben registrar pago por medio día o día.'
   },
   reserva: {
     titulo: 'Nueva reserva',
     endpoint: '/reservas',
     campos: [
-      { label: 'Cliente', name: 'cliente_id', type: 'dynamic-select', source: 'clientes' },
-      { label: 'Duración', name: 'duracion', type: 'number', placeholder: '60' },
-      { label: 'Unidad', name: 'duracion_tipo', type: 'select', opciones: ['minutos', 'horas'] },
+      { label: 'Cliente', name: 'cliente_id', type: 'dynamic-select', source: 'clientes_membresia' },
+      { label: 'Duración', name: 'duracion', type: 'select', opciones: [
+        { value: '720', label: 'Medio día' }, { value: '1440', label: 'Un día' }
+      ] },
       { label: 'Estado', name: 'estado', type: 'select', opciones: ['pendiente', 'confirmada', 'cancelada'] },
-    ],
-    nota: 'Selecciona minutos u horas para la duración de la reserva.'
+    ]
   },
   pago: {
     titulo: 'Registrar pago',
     endpoint: '/pagos',
     campos: [
-      { label: 'Cliente', name: 'cliente_id', type: 'dynamic-select', source: 'clientes' },
-      { label: 'Monto ($)', name: 'monto', type: 'number', placeholder: '0.00', min: '0', step: '0.01' },
-      { label: 'Concepto', name: 'concepto', type: 'select', opciones: ['entrada', 'membresia', 'reserva', 'otro'] },
+      { label: 'Cliente', name: 'cliente_id', type: 'dynamic-select', source: 'clientes_sin_membresia' },
+      { label: 'Monto ($)', name: 'monto', type: 'number', placeholder: '0.00', min: '0.01' },
+      { label: 'Tipo de pago', name: 'concepto', type: 'select', opciones: [
+        { value: 'medio_dia', label: 'Medio día' }, { value: 'dia', label: 'Un día' }
+      ] },
       { label: 'Método de pago', name: 'metodo', type: 'select', opciones: ['efectivo', 'transferencia'] },
     ],
-    nota: '💡 Usa el concepto "entrada" para que el sistema autorice el ingreso del cliente.'
+    nota: '💡 Solo aparecen clientes sin membresía. Este pago habilita su ingreso en Accesos.'
   },
 }
 
 // Construye las <option> de un campo dynamic-select a partir de la lista
 // en cache correspondiente (_guardavidas, _clientes, _equipos...).
 function opcionesDinamicas(source, opcional, valorActual) {
-  const lista = CACHE[source] || []
+  const lista = listaDinamica(source)
   let opts = opcional ? `<option value="0">— Ninguno —</option>` : ''
   if (lista.length === 0) {
     opts += `<option value="" disabled>No hay registros disponibles</option>`
@@ -753,6 +654,31 @@ function opcionesDinamicas(source, opcional, valorActual) {
     return `<option value="${item.id}" ${sel}>${item.nombre}</option>`
   }).join('')
   return opts
+}
+
+function listaDinamica(source) {
+  if (source === 'clientes_membresia') return CACHE.clientes.filter(tieneMembresia)
+  if (source === 'clientes_sin_membresia') return CACHE.clientes.filter(c => !tieneMembresia(c))
+  if (source === 'clientes_acceso') {
+    return CACHE.clientes.filter(c => !tieneMembresia(c) && tienePagoEntrada(c.id))
+  }
+  if (source === 'clientes_incidente') {
+    return CACHE.clientes.filter(c => tieneMembresia(c) || tieneAccesoActivo(c.id))
+  }
+  return CACHE[source] || []
+}
+
+function tieneMembresia(cliente) {
+  const membresia = String(cliente.membresia || '').trim().toLowerCase()
+  return membresia !== '' && membresia !== 'ninguna'
+}
+
+function tienePagoEntrada(clienteId) {
+  return CACHE.pagos.some(p => Number(p.cliente_id) === Number(clienteId) && ['medio_dia', 'dia'].includes(String(p.concepto || '').toLowerCase()))
+}
+
+function tieneAccesoActivo(clienteId) {
+  return CACHE.accesos.some(a => Number(a.cliente_id) === Number(clienteId) && a.autorizado)
 }
 
 let modalActual = null
@@ -792,40 +718,14 @@ function openModal(type, id) {
       }).join('')
       return `<div class="modal-field"><label>${c.label}</label><select name="${c.name}">${opts}</select></div>`
     }
-    const attrs = []
-    if (c.min !== undefined) attrs.push(`min="${c.min}"`)
-    if (c.max !== undefined) attrs.push(`max="${c.max}"`)
-    if (c.step !== undefined) attrs.push(`step="${c.step}"`)
     const val = valorActual !== undefined ? `value="${valorActual}"` : ''
-    const attrText = attrs.length ? `${attrs.join(' ')} ` : ''
+    const min = c.min ? `min="${c.min}"` : ''
     return `<div class="modal-field"><label>${c.label}</label>
-      <input type="${c.type}" name="${c.name}" placeholder="${c.placeholder || ''}" ${attrText}${val} /></div>`
+      <input type="${c.type}" name="${c.name}" placeholder="${c.placeholder || ''}" ${val} ${min} /></div>`
   }).join('')
 
   if (form.nota) {
     html += `<p style="font-size:12px; color:var(--muted); background:var(--bg); padding:8px 10px; border-radius:6px; margin-top:4px;">${form.nota}</p>`
-  }
-
-  if (modalActual === 'pago') {
-    html += `<div class="modal-field"><label>Precios sugeridos</label>
-      <div class="price-group">
-        <div class="price-group-title">Sin membresía</div>
-        <div class="price-table">
-          <button type="button" class="price-option" onclick="setMontoPrecio(5)">30 min — $5.00</button>
-          <button type="button" class="price-option" onclick="setMontoPrecio(10)">1 h — $10.00</button>
-          <button type="button" class="price-option" onclick="setMontoPrecio(18)">2 h — $18.00</button>
-        </div>
-      </div>
-      <div class="price-group">
-        <div class="price-group-title">Con membresía</div>
-        <div class="price-table">
-          <button type="button" class="price-option" onclick="setMontoPrecio(3)">30 min — $3.00</button>
-          <button type="button" class="price-option" onclick="setMontoPrecio(6)">1 h — $6.00</button>
-          <button type="button" class="price-option" onclick="setMontoPrecio(10)">2 h — $10.00</button>
-        </div>
-      </div>
-      <small style="color:var(--muted);display:block;margin-top:4px;">Haz clic en una opción para sumarlo al monto.</small>
-    </div>`
   }
 
   document.getElementById('modalBody').innerHTML = html
@@ -847,27 +747,15 @@ async function guardarModal() {
     const el = document.querySelector(`#modalBody [name="${c.name}"]`)
     if (!el) return
 
-    if (c.type === 'number' || c.type === 'dynamic-select') {
+    if (c.type === 'number' || c.type === 'dynamic-select' || c.name === 'duracion') {
       body[c.name] = el.value === '' ? 0 : Number(el.value)
     } else if (c.type === 'select' && Array.isArray(c.opciones) && typeof c.opciones[0] === 'object') {
-      // selects de boolean (ej. activo: true/false) vienen como objetos {value, label}
-      body[c.name] = el.value === 'true'
+      const valores = c.opciones.map(o => o.value)
+      body[c.name] = valores.includes('true') || valores.includes('false') ? el.value === 'true' : el.value
     } else {
       body[c.name] = el.value
     }
   })
-
-  if (modalActual === 'reserva' && body.duracion_tipo === 'horas') {
-    body.duracion = Number(body.duracion) * 60
-  }
-
-  if (modalActual === 'pago') {
-    const monto = Number(body.monto)
-    if (!Number.isFinite(monto) || monto <= 0) {
-      toast('El monto debe ser mayor a cero', '#a32d2d')
-      return
-    }
-  }
 
   // Validación temprana en el frontend para los selects dinámicos obligatorios:
   // si quedaron en 0 (placeholder "Ninguno" o lista vacía), avisamos antes de llamar a la API.
@@ -876,6 +764,11 @@ async function guardarModal() {
       toast(`Selecciona un valor para "${c.label}"`, '#a32d2d')
       return
     }
+  }
+
+  if (body.monto !== undefined && body.monto <= 0) {
+    toast('El monto debe ser mayor a cero', '#a32d2d')
+    return
   }
 
   const editando = modalEditId != null
@@ -891,16 +784,17 @@ async function guardarModal() {
 
     if (res.ok || res.status === 200) {
       const data = await res.json()
+      const tipoGuardado = modalActual
       closeModal()
 
-      if (modalActual === 'acceso') {
+      if (tipoGuardado === 'acceso') {
         const alertEl = document.getElementById('accesoAlert')
         if (data.autorizado) {
           alertEl.className = 'acceso-alert autorizado'
-          alertEl.innerHTML = `<i class="ti ti-circle-check"></i> <strong>${data.nombre_cliente}</strong> — Acceso AUTORIZADO. Pago al día.`
+          alertEl.innerHTML = `<i class="ti ti-circle-check"></i> <strong>${data.nombre_cliente}</strong> — Acceso AUTORIZADO. Ingreso habilitado.`
         } else {
           alertEl.className = 'acceso-alert denegado'
-          alertEl.innerHTML = `<i class="ti ti-circle-x"></i> <strong>${data.nombre_cliente}</strong> — Acceso DENEGADO. ${data.motivo}`
+          alertEl.innerHTML = `<i class="ti ti-circle-x"></i> <strong>${data.nombre_cliente}</strong> — Acceso DENEGADO.`
         }
         alertEl.style.display = 'block'
         setTimeout(() => { alertEl.style.display = 'none' }, 6000)
@@ -910,18 +804,24 @@ async function guardarModal() {
 
       cargarTodo()
     } else {
-      const data = await res.json().catch(() => ({}))
-      toast('Error: ' + (data.error || 'no se pudo guardar'), '#a32d2d')
+      // Intentar leer JSON con campo 'error', si no está disponible leer texto
+      let msg = 'no se pudo guardar'
+      try {
+        const ct = res.headers.get('content-type') || ''
+        if (ct.includes('application/json')) {
+          const data = await res.json()
+          msg = data.error || JSON.stringify(data)
+        } else {
+          const txt = await res.text()
+          msg = txt || msg
+        }
+      } catch (e) {
+        // ignore
+      }
+      toast('Error: ' + msg, '#a32d2d')
     }
   } catch {
     /* fetchConToken ya maneja el 401 */
-  }
-}
-
-function setMontoPrecio(valor) {
-  const input = document.querySelector('#modalBody [name="monto"]')
-  if (input) {
-    input.value = (Number(input.value) || 0) + valor
   }
 }
 

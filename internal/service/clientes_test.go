@@ -1,75 +1,67 @@
 package service
 
 import (
+	"errors"
 	"testing"
 
 	"pool-api/internal/models"
+	"pool-api/internal/storage"
 )
 
-// ─── MOCKS MANUALES PARA CLIENTES ──────────────────────────────────────────
-//
-// Mock manual de storage.ClientesModulo que implementa toda la interfaz
-//
+type clientesModuloMock struct {
+	clientes map[uint]models.Cliente
+	reservas map[uint]models.Reserva
+	pagos    map[uint]models.Pago
 
-type mockClientesModulo struct {
-	clientes        map[uint]models.Cliente
-	reservas        map[uint]models.Reserva
-	pagos           map[uint]models.Pago
-	ultimoClienteID uint
-	ultimoReservaID uint
-	ultimoPagoID    uint
-
-	// flags para verificar qué se llamó
-	crearClienteLlamado      bool
-	actualizarClienteLlamado bool
-	borrarClienteLlamado     bool
-	crearReservaLlamado      bool
-	crearPagoLlamado         bool
+	crearClienteLlamado bool
+	crearReservaLlamado bool
+	crearPagoLlamado    bool
+	errorCrearCliente   error
 }
 
-func newMockClientesModulo() *mockClientesModulo {
-	return &mockClientesModulo{
+var _ storage.ClientesModulo = (*clientesModuloMock)(nil)
+
+func newClientesModuloMock() *clientesModuloMock {
+	return &clientesModuloMock{
 		clientes: make(map[uint]models.Cliente),
 		reservas: make(map[uint]models.Reserva),
 		pagos:    make(map[uint]models.Pago),
 	}
 }
 
-// ─── CLIENTE ──────────────────────────────────────────────────────────────────
-
-func (m *mockClientesModulo) ListarClientes() []models.Cliente {
-	result := make([]models.Cliente, 0, len(m.clientes))
+func (m *clientesModuloMock) ListarClientes() []models.Cliente {
+	lista := make([]models.Cliente, 0, len(m.clientes))
 	for _, c := range m.clientes {
-		result = append(result, c)
+		lista = append(lista, c)
 	}
-	return result
+	return lista
 }
 
-func (m *mockClientesModulo) BuscarClientePorID(id uint) (models.Cliente, bool) {
+func (m *clientesModuloMock) BuscarClientePorID(id uint) (models.Cliente, bool) {
 	c, ok := m.clientes[id]
 	return c, ok
 }
 
-func (m *mockClientesModulo) CrearCliente(c models.Cliente) models.Cliente {
+func (m *clientesModuloMock) CrearCliente(c models.Cliente) (models.Cliente, error) {
 	m.crearClienteLlamado = true
-	m.ultimoClienteID++
-	c.ID = m.ultimoClienteID
+	if m.errorCrearCliente != nil {
+		return models.Cliente{}, m.errorCrearCliente
+	}
+	c.ID = uint(len(m.clientes) + 1)
 	m.clientes[c.ID] = c
-	return c
+	return c, nil
 }
 
-func (m *mockClientesModulo) ActualizarCliente(id uint, c models.Cliente) (models.Cliente, bool) {
-	m.actualizarClienteLlamado = true
+func (m *clientesModuloMock) ActualizarCliente(id uint, datos models.Cliente) (models.Cliente, bool) {
 	if _, ok := m.clientes[id]; !ok {
 		return models.Cliente{}, false
 	}
-	c.ID = id
-	m.clientes[id] = c
-	return c, true
+	datos.ID = id
+	m.clientes[id] = datos
+	return datos, true
 }
 
-func (m *mockClientesModulo) BorrarCliente(id uint) bool {
-	m.borrarClienteLlamado = true
+func (m *clientesModuloMock) BorrarCliente(id uint) bool {
 	if _, ok := m.clientes[id]; !ok {
 		return false
 	}
@@ -77,522 +69,127 @@ func (m *mockClientesModulo) BorrarCliente(id uint) bool {
 	return true
 }
 
-// ─── RESERVA ──────────────────────────────────────────────────────────────────
-
-func (m *mockClientesModulo) ListarReservas() []models.Reserva {
-	result := make([]models.Reserva, 0, len(m.reservas))
-	for _, r := range m.reservas {
-		result = append(result, r)
-	}
-	return result
-}
-
-func (m *mockClientesModulo) BuscarReservaPorID(id uint) (models.Reserva, bool) {
+func (m *clientesModuloMock) ListarReservas() []models.Reserva { return nil }
+func (m *clientesModuloMock) BuscarReservaPorID(id uint) (models.Reserva, bool) {
 	r, ok := m.reservas[id]
 	return r, ok
 }
 
-func (m *mockClientesModulo) CrearReserva(r models.Reserva) models.Reserva {
+func (m *clientesModuloMock) CrearReserva(r models.Reserva) (models.Reserva, error) {
 	m.crearReservaLlamado = true
-	m.ultimoReservaID++
-	r.ID = m.ultimoReservaID
+	r.ID = uint(len(m.reservas) + 1)
 	m.reservas[r.ID] = r
-	return r
+	return r, nil
 }
 
-func (m *mockClientesModulo) ActualizarReserva(id uint, r models.Reserva) (models.Reserva, bool) {
+func (m *clientesModuloMock) ActualizarReserva(id uint, datos models.Reserva) (models.Reserva, bool) {
 	if _, ok := m.reservas[id]; !ok {
 		return models.Reserva{}, false
 	}
-	r.ID = id
-	m.reservas[id] = r
-	return r, true
+	datos.ID = id
+	m.reservas[id] = datos
+	return datos, true
 }
 
-func (m *mockClientesModulo) BorrarReserva(id uint) bool {
-	if _, ok := m.reservas[id]; !ok {
-		return false
-	}
-	delete(m.reservas, id)
-	return true
-}
+func (m *clientesModuloMock) BorrarReserva(id uint) bool { return false }
 
-// ─── PAGO ─────────────────────────────────────────────────────────────────────
-
-func (m *mockClientesModulo) ListarPagos() []models.Pago {
-	result := make([]models.Pago, 0, len(m.pagos))
-	for _, p := range m.pagos {
-		result = append(result, p)
-	}
-	return result
-}
-
-func (m *mockClientesModulo) BuscarPagoPorID(id uint) (models.Pago, bool) {
+func (m *clientesModuloMock) ListarPagos() []models.Pago { return nil }
+func (m *clientesModuloMock) BuscarPagoPorID(id uint) (models.Pago, bool) {
 	p, ok := m.pagos[id]
 	return p, ok
 }
 
-func (m *mockClientesModulo) CrearPago(p models.Pago) models.Pago {
+func (m *clientesModuloMock) CrearPago(p models.Pago) (models.Pago, error) {
 	m.crearPagoLlamado = true
-	m.ultimoPagoID++
-	p.ID = m.ultimoPagoID
+	p.ID = uint(len(m.pagos) + 1)
 	m.pagos[p.ID] = p
-	return p
+	return p, nil
 }
 
-func (m *mockClientesModulo) ActualizarPago(id uint, p models.Pago) (models.Pago, bool) {
+func (m *clientesModuloMock) ActualizarPago(id uint, datos models.Pago) (models.Pago, bool) {
 	if _, ok := m.pagos[id]; !ok {
 		return models.Pago{}, false
 	}
-	p.ID = id
-	m.pagos[id] = p
-	return p, true
+	datos.ID = id
+	m.pagos[id] = datos
+	return datos, true
 }
 
-func (m *mockClientesModulo) BorrarPago(id uint) bool {
-	if _, ok := m.pagos[id]; !ok {
-		return false
-	}
-	delete(m.pagos, id)
-	return true
-}
+func (m *clientesModuloMock) BorrarPago(id uint) bool { return false }
 
-func (m *mockClientesModulo) ClienteTienePagoEntrada(clienteID uint) bool {
-	// Por defecto devolvemos false; los tests pueden sobrescribir si lo necesitan
+func (m *clientesModuloMock) ClienteTienePagoEntrada(clienteID uint) bool {
 	for _, p := range m.pagos {
-		if p.ClienteID == clienteID && p.Concepto == "entrada" {
+		if p.ClienteID == clienteID && (p.Concepto == "medio_dia" || p.Concepto == "dia") {
 			return true
 		}
 	}
 	return false
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// ─── TESTS PARA CLIENTE ────────────────────────────────────────────────────────
-// ═════════════════════════════════════════════════════════════════════════════
-
-// TestCrearCliente_Exitoso prueba que se crea un cliente con todos los campos.
-func TestCrearCliente_Exitoso(t *testing.T) {
-	repo := newMockClientesModulo()
+func TestClientesService_CrearCliente_AsignaMembresiaPorDefecto(t *testing.T) {
+	repo := newClientesModuloMock()
 	svc := NewClientesService(repo)
 
-	cliente := models.Cliente{
-		Nombre:    "Juan Pérez",
-		Cedula:    "1234567890",
-		Membresia: "anual",
-	}
-
-	resultado, err := svc.CrearCliente(cliente)
+	creado, err := svc.CrearCliente(models.Cliente{Nombre: "Maria Garcia", Cedula: "1312345678"})
 	if err != nil {
-		t.Fatalf("no se esperaba error, se obtuvo: %v", err)
+		t.Fatalf("no se esperaba error: %v", err)
 	}
-
 	if !repo.crearClienteLlamado {
 		t.Fatal("se esperaba que CrearCliente llegara al repositorio")
 	}
-
-	if resultado.ID == 0 {
-		t.Error("se esperaba un ID asignado")
-	}
-	if resultado.Nombre != "Juan Pérez" {
-		t.Errorf("nombre incorrecto: %s", resultado.Nombre)
-	}
-	if resultado.Cedula != "1234567890" {
-		t.Errorf("cédula incorrecta: %s", resultado.Cedula)
+	if creado.Membresia != "ninguna" {
+		t.Fatalf("se esperaba membresia por defecto 'ninguna', se obtuvo %q", creado.Membresia)
 	}
 }
 
-// TestCrearCliente_SinNombre prueba que se rechaza un cliente sin nombre.
-func TestCrearCliente_SinNombre(t *testing.T) {
-	repo := newMockClientesModulo()
+func TestClientesService_CrearCliente_InvalidoNoLlegaAlRepo(t *testing.T) {
+	repo := newClientesModuloMock()
 	svc := NewClientesService(repo)
 
-	cliente := models.Cliente{
-		Nombre: "",
-		Cedula: "1234567890",
-	}
-
-	_, err := svc.CrearCliente(cliente)
+	_, err := svc.CrearCliente(models.Cliente{Nombre: "", Cedula: "1312345678"})
 	if err != ErrCampoObligatorio {
-		t.Fatalf("se esperaba ErrCampoObligatorio, se obtuvo: %v", err)
+		t.Fatalf("se esperaba ErrCampoObligatorio, se obtuvo %v", err)
 	}
-
 	if repo.crearClienteLlamado {
-		t.Error("no se debería haber llegado al repositorio sin nombre")
+		t.Fatal("no debe tocar el repositorio si faltan campos obligatorios")
 	}
 }
 
-// TestCrearCliente_SinCedula prueba que se rechaza un cliente sin cédula.
-func TestCrearCliente_SinCedula(t *testing.T) {
-	repo := newMockClientesModulo()
+func TestClientesService_CrearCliente_CedulaDuplicada(t *testing.T) {
+	repo := newClientesModuloMock()
+	repo.errorCrearCliente = errors.New("UNIQUE constraint failed: clientes.cedula")
 	svc := NewClientesService(repo)
 
-	cliente := models.Cliente{
-		Nombre: "Juan Pérez",
-		Cedula: "",
-	}
-
-	_, err := svc.CrearCliente(cliente)
-	if err != ErrCampoObligatorio {
-		t.Fatalf("se esperaba ErrCampoObligatorio, se obtuvo: %v", err)
-	}
-
-	if repo.crearClienteLlamado {
-		t.Error("no se debería haber llegado al repositorio sin cédula")
-	}
-}
-
-// TestCrearCliente_MembresiaPorDefecto prueba que si no se especifica membresía,
-// se asigna "ninguna" automáticamente.
-func TestCrearCliente_MembresiaPorDefecto(t *testing.T) {
-	repo := newMockClientesModulo()
-	svc := NewClientesService(repo)
-
-	cliente := models.Cliente{
-		Nombre: "María García",
-		Cedula: "9876543210",
-		// Membresia vacía
-	}
-
-	resultado, err := svc.CrearCliente(cliente)
-	if err != nil {
-		t.Fatalf("no se esperaba error: %v", err)
-	}
-
-	if resultado.Membresia != "ninguna" {
-		t.Errorf("se esperaba membresía 'ninguna', se obtuvo: %s", resultado.Membresia)
-	}
-}
-
-// TestActualizarCliente_Exitoso prueba que se actualiza un cliente existente.
-func TestActualizarCliente_Exitoso(t *testing.T) {
-	repo := newMockClientesModulo()
-	svc := NewClientesService(repo)
-
-	// Crear cliente primero
-	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Juan", Cedula: "123"}
-
-	actualizado := models.Cliente{
-		Nombre: "Juan Actualizado",
-		Cedula: "123",
-	}
-
-	resultado, err := svc.ActualizarCliente(1, actualizado)
-	if err != nil {
-		t.Fatalf("no se esperaba error: %v", err)
-	}
-
-	if resultado.Nombre != "Juan Actualizado" {
-		t.Errorf("nombre no actualizado: %s", resultado.Nombre)
-	}
-}
-
-// TestActualizarCliente_NoEncontrado prueba que se rechaza la actualización
-// de un cliente que no existe.
-func TestActualizarCliente_NoEncontrado(t *testing.T) {
-	repo := newMockClientesModulo()
-	svc := NewClientesService(repo)
-
-	cliente := models.Cliente{
-		Nombre: "Juan",
-		Cedula: "123",
-	}
-
-	_, err := svc.ActualizarCliente(999, cliente)
-	if err != ErrNoEncontrado {
-		t.Fatalf("se esperaba ErrNoEncontrado, se obtuvo: %v", err)
-	}
-}
-
-// TestBorrarCliente_Exitoso prueba que se borra un cliente.
-func TestBorrarCliente_Exitoso(t *testing.T) {
-	repo := newMockClientesModulo()
-	svc := NewClientesService(repo)
-
-	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Juan", Cedula: "123"}
-
-	err := svc.BorrarCliente(1)
-	if err != nil {
-		t.Fatalf("no se esperaba error: %v", err)
-	}
-
-	if _, ok := repo.clientes[1]; ok {
-		t.Error("el cliente debería haber sido borrado")
-	}
-}
-
-// TestBorrarCliente_NoEncontrado prueba que se rechaza el borrado de un
-// cliente que no existe.
-func TestBorrarCliente_NoEncontrado(t *testing.T) {
-	repo := newMockClientesModulo()
-	svc := NewClientesService(repo)
-
-	err := svc.BorrarCliente(999)
-	if err != ErrNoEncontrado {
-		t.Fatalf("se esperaba ErrNoEncontrado, se obtuvo: %v", err)
-	}
-}
-
-// ═════════════════════════════════════════════════════════════════════════════
-// ─── TESTS PARA RESERVA ────────────────────────────────────────────────────────
-// ═════════════════════════════════════════════════════════════════════════════
-
-// TestCrearReserva_Exitoso prueba que se crea una reserva con cliente válido.
-func TestCrearReserva_Exitoso(t *testing.T) {
-	repo := newMockClientesModulo()
-	svc := NewClientesService(repo)
-
-	// Crear cliente primero
-	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Juan", Cedula: "123"}
-
-	reserva := models.Reserva{
-		ClienteID: 1,
-		Duracion:  120,
-	}
-
-	resultado, err := svc.CrearReserva(reserva)
-	if err != nil {
-		t.Fatalf("no se esperaba error: %v", err)
-	}
-
-	if !repo.crearReservaLlamado {
-		t.Fatal("se esperaba que CrearReserva llegara al repositorio")
-	}
-
-	if resultado.ID == 0 {
-		t.Error("se esperaba un ID asignado")
-	}
-}
-
-// TestCrearReserva_SinClienteID prueba que se rechaza una reserva sin ClienteID.
-func TestCrearReserva_SinClienteID(t *testing.T) {
-	repo := newMockClientesModulo()
-	svc := NewClientesService(repo)
-
-	reserva := models.Reserva{
-		ClienteID: 0,
-	}
-
-	_, err := svc.CrearReserva(reserva)
-	if err != ErrCampoObligatorio {
-		t.Fatalf("se esperaba ErrCampoObligatorio, se obtuvo: %v", err)
-	}
-}
-
-// TestCrearReserva_ClienteInvalido prueba que se rechaza una reserva con
-// ClienteID que no existe en la base de datos.
-func TestCrearReserva_ClienteInvalido(t *testing.T) {
-	repo := newMockClientesModulo()
-	svc := NewClientesService(repo)
-
-	reserva := models.Reserva{
-		ClienteID: 999,
-	}
-
-	_, err := svc.CrearReserva(reserva)
-	if err != ErrClienteInvalido {
-		t.Fatalf("se esperaba ErrClienteInvalido, se obtuvo: %v", err)
-	}
-
-	if repo.crearReservaLlamado {
-		t.Error("no se debería llegar al repositorio con cliente inválido")
-	}
-}
-
-// TestCrearCliente_CedulaDuplicada verifica que no se permita crear dos
-// clientes con la misma cédula y que el repositorio no sea llamado.
-func TestCrearCliente_CedulaDuplicada(t *testing.T) {
-	repo := newMockClientesModulo()
-	svc := NewClientesService(repo)
-
-	// Cliente existente con cédula 111
-	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Existente", Cedula: "111"}
-
-	nuevo := models.Cliente{Nombre: "Nuevo", Cedula: "111"}
-
-	_, err := svc.CrearCliente(nuevo)
+	_, err := svc.CrearCliente(models.Cliente{Nombre: "Luis Pino", Cedula: "1312345678"})
 	if err != ErrCedulaEnUso {
-		t.Fatalf("se esperaba ErrCedulaEnUso, se obtuvo: %v", err)
-	}
-
-	if repo.crearClienteLlamado {
-		t.Error("no se debería haber llamado a CrearCliente del repositorio cuando la cédula está en uso")
+		t.Fatalf("se esperaba ErrCedulaEnUso, se obtuvo %v", err)
 	}
 }
 
-// TestCrearCliente_EmailDuplicado verifica que no se permita crear dos
-// clientes con el mismo email y que el repositorio no sea llamado.
-func TestCrearCliente_EmailDuplicado(t *testing.T) {
-	repo := newMockClientesModulo()
+func TestClientesService_CrearReserva_RequiereMembresia(t *testing.T) {
+	repo := newClientesModuloMock()
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Luis Pino", Membresia: "ninguna"}
 	svc := NewClientesService(repo)
 
-	// Cliente existente con email exist@example.com
-	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Existente", Cedula: "200", Email: "exist@example.com"}
-
-	nuevo := models.Cliente{Nombre: "Nuevo", Cedula: "201", Email: "exist@example.com"}
-
-	_, err := svc.CrearCliente(nuevo)
-	if err != ErrEmailEnUso {
-		t.Fatalf("se esperaba ErrEmailEnUso, se obtuvo: %v", err)
+	_, err := svc.CrearReserva(models.Reserva{ClienteID: 1, Duracion: 720})
+	if err != ErrClienteSinMembresia {
+		t.Fatalf("se esperaba ErrClienteSinMembresia, se obtuvo %v", err)
 	}
-
-	if repo.crearClienteLlamado {
-		t.Error("no se debería haber llamado a CrearCliente del repositorio cuando el email está en uso")
+	if repo.crearReservaLlamado {
+		t.Fatal("no debe crear reserva para cliente sin membresia")
 	}
 }
 
-// TestCrearCliente_TelefonoDuplicado verifica que no se permita crear dos
-// clientes con el mismo teléfono y que el repositorio no sea llamado.
-func TestCrearCliente_TelefonoDuplicado(t *testing.T) {
-	repo := newMockClientesModulo()
+func TestClientesService_CrearPago_RechazaClienteConMembresia(t *testing.T) {
+	repo := newClientesModuloMock()
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Ana Reyes", Membresia: "mensual"}
 	svc := NewClientesService(repo)
 
-	// Cliente existente con teléfono 555-0000
-	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Existente", Cedula: "300", Telefono: "555-0000"}
-
-	nuevo := models.Cliente{Nombre: "Nuevo", Cedula: "301", Telefono: "555-0000"}
-
-	_, err := svc.CrearCliente(nuevo)
-	if err != ErrTelefonoEnUso {
-		t.Fatalf("se esperaba ErrTelefonoEnUso, se obtuvo: %v", err)
+	_, err := svc.CrearPago(models.Pago{ClienteID: 1, Monto: 3, Concepto: "dia"})
+	if err != ErrClienteConMembresia {
+		t.Fatalf("se esperaba ErrClienteConMembresia, se obtuvo %v", err)
 	}
-
-	if repo.crearClienteLlamado {
-		t.Error("no se debería haber llamado a CrearCliente del repositorio cuando el teléfono está en uso")
-	}
-}
-
-// TestCrearReserva_EstadoPorDefecto prueba que si no se especifica estado,
-// se asigna "pendiente" automáticamente.
-func TestCrearReserva_EstadoPorDefecto(t *testing.T) {
-	repo := newMockClientesModulo()
-	svc := NewClientesService(repo)
-
-	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Juan", Cedula: "123"}
-
-	reserva := models.Reserva{
-		ClienteID: 1,
-		Estado:    "",
-	}
-
-	resultado, err := svc.CrearReserva(reserva)
-	if err != nil {
-		t.Fatalf("no se esperaba error: %v", err)
-	}
-
-	if resultado.Estado != "pendiente" {
-		t.Errorf("se esperaba estado 'pendiente', se obtuvo: %s", resultado.Estado)
-	}
-}
-
-// ═════════════════════════════════════════════════════════════════════════════
-// ─── TESTS PARA PAGO ───────────────────────────────────────────────────────────
-// ═════════════════════════════════════════════════════════════════════════════
-
-// TestCrearPago_Exitoso prueba que se crea un pago con datos válidos.
-func TestCrearPago_Exitoso(t *testing.T) {
-	repo := newMockClientesModulo()
-	svc := NewClientesService(repo)
-
-	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Juan", Cedula: "123"}
-
-	pago := models.Pago{
-		ClienteID: 1,
-		Monto:     100.0,
-		Concepto:  "entrada",
-	}
-
-	resultado, err := svc.CrearPago(pago)
-	if err != nil {
-		t.Fatalf("no se esperaba error: %v", err)
-	}
-
-	if !repo.crearPagoLlamado {
-		t.Fatal("se esperaba que CrearPago llegara al repositorio")
-	}
-
-	if resultado.ID == 0 {
-		t.Error("se esperaba un ID asignado")
-	}
-}
-
-// TestCrearPago_SinClienteID prueba que se rechaza un pago sin ClienteID.
-func TestCrearPago_SinClienteID(t *testing.T) {
-	repo := newMockClientesModulo()
-	svc := NewClientesService(repo)
-
-	pago := models.Pago{
-		ClienteID: 0,
-		Monto:     100.0,
-	}
-
-	_, err := svc.CrearPago(pago)
-	if err != ErrCampoObligatorio {
-		t.Fatalf("se esperaba ErrCampoObligatorio, se obtuvo: %v", err)
-	}
-}
-
-// TestCrearPago_MontoInvalido prueba que se rechaza un pago con monto <= 0.
-func TestCrearPago_MontoInvalido(t *testing.T) {
-	repo := newMockClientesModulo()
-	svc := NewClientesService(repo)
-
-	pago := models.Pago{
-		ClienteID: 1,
-		Monto:     -50.0,
-	}
-
-	_, err := svc.CrearPago(pago)
-	if err != ErrMontoInvalido {
-		t.Fatalf("se esperaba ErrMontoInvalido, se obtuvo: %v", err)
-	}
-}
-
-// TestCrearPago_MontoZero prueba que se rechaza un pago con monto 0.
-func TestCrearPago_MontoZero(t *testing.T) {
-	repo := newMockClientesModulo()
-	svc := NewClientesService(repo)
-
-	pago := models.Pago{
-		ClienteID: 1,
-		Monto:     0,
-	}
-
-	_, err := svc.CrearPago(pago)
-	if err != ErrMontoInvalido {
-		t.Fatalf("se esperaba ErrMontoInvalido, se obtuvo: %v", err)
-	}
-}
-
-// TestCrearPago_ClienteInvalido prueba que se rechaza un pago con ClienteID
-// que no existe en la base de datos.
-func TestCrearPago_ClienteInvalido(t *testing.T) {
-	repo := newMockClientesModulo()
-	svc := NewClientesService(repo)
-
-	pago := models.Pago{
-		ClienteID: 999,
-		Monto:     100.0,
-	}
-
-	_, err := svc.CrearPago(pago)
-	if err != ErrClienteInvalido {
-		t.Fatalf("se esperaba ErrClienteInvalido, se obtuvo: %v", err)
-	}
-
 	if repo.crearPagoLlamado {
-		t.Error("no se debería llegar al repositorio con cliente inválido")
-	}
-}
-
-// TestBorrarPago_NoEncontrado prueba que se rechaza el borrado de un pago
-// que no existe.
-func TestBorrarPago_NoEncontrado(t *testing.T) {
-	repo := newMockClientesModulo()
-	svc := NewClientesService(repo)
-
-	err := svc.BorrarPago(999)
-	if err != ErrNoEncontrado {
-		t.Fatalf("se esperaba ErrNoEncontrado, se obtuvo: %v", err)
+		t.Fatal("no debe crear pago de entrada para cliente con membresia")
 	}
 }

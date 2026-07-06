@@ -19,7 +19,7 @@ type Incidente struct {
 	Descripcion  string    `json:"descripcion"`
 	Gravedad     string    `json:"gravedad"      gorm:"not null"` // "leve", "moderado", "grave"
 	GuardavidaID uint      `json:"guardavida_id" gorm:"not null"`
-	ClienteID    uint      `json:"cliente_id"`
+	ClienteID    uint      `json:"cliente_id,omitempty"`
 	FechaHora    time.Time `json:"fecha_hora"`
 	Resuelto     bool      `json:"resuelto"      gorm:"default:false"`
 }

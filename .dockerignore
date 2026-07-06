@@ -1,5 +1,7 @@
+.git
 *.db
-*.py
 *.exe
+*.pdf
 informe_testing_seguridad.html
-informe_testing_seguridad.pdf
+Dockerfile
+docker-compose.yml

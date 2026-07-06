@@ -15,13 +15,9 @@ import (
 	"pool-api/internal/service"
 )
 
-// ─── FAKE EN MEMORIA ────────────────────────────────────────────────────────
-//
-// A diferencia de un mock (que solo registra llamadas), este fake SÍ guarda
-// los datos de verdad, pero en un slice en memoria en vez de una base real.
-// Sirve para probar el handler de punta a punta (JSON → service → "repo")
-// sin depender de SQLite.
-
+// fakeSeguridadRepo es un fake en memoria del storage.SeguridadRepository:
+// guarda los guardavidas en un slice real en vez de una base de datos, para
+// poder probar el handler de punta a punta sin SQLite.
 type fakeSeguridadRepo struct {
 	guardavidas []models.Guardavida
 	siguienteID uint
@@ -76,7 +72,7 @@ func (f *fakeClienteRepo) ListarClientes() []models.Cliente { return nil }
 func (f *fakeClienteRepo) BuscarClientePorID(id uint) (models.Cliente, bool) {
 	return models.Cliente{}, false
 }
-func (f *fakeClienteRepo) CrearCliente(c models.Cliente) models.Cliente { return c }
+func (f *fakeClienteRepo) CrearCliente(c models.Cliente) (models.Cliente, error) { return c, nil }
 func (f *fakeClienteRepo) ActualizarCliente(id uint, datos models.Cliente) (models.Cliente, bool) {
 	return models.Cliente{}, false
 }
@@ -86,7 +82,7 @@ type fakePagoRepo struct{}
 
 func (f *fakePagoRepo) ListarPagos() []models.Pago                  { return nil }
 func (f *fakePagoRepo) BuscarPagoPorID(id uint) (models.Pago, bool) { return models.Pago{}, false }
-func (f *fakePagoRepo) CrearPago(p models.Pago) models.Pago         { return p }
+func (f *fakePagoRepo) CrearPago(p models.Pago) (models.Pago, error) { return p, nil }
 func (f *fakePagoRepo) ActualizarPago(id uint, datos models.Pago) (models.Pago, bool) {
 	return models.Pago{}, false
 }
