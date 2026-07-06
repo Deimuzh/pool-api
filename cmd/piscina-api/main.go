@@ -44,7 +44,8 @@ func run(cfg config.Config) error {
 	if err != nil {
 		return fmt.Errorf("no se pudo abrir la base de datos: %w", err)
 	}
-
+	// AutoMigrate crea o actualiza las tablas según los structs del dominio.
+	// Esto mantiene la persistencia sincronizada tanto en SQLite como en PostgreSQL.
 	if err := db.AutoMigrate(
 		&models.Guardavida{}, &models.Incidente{}, &models.AccesoCliente{},
 		&models.Equipo{}, &models.RegistroMantenimiento{}, &models.ProductoQuimico{},
