@@ -197,3 +197,27 @@ func TestCrearAcceso_ConPagoRegistraAcceso(t *testing.T) {
 		t.Errorf("nombre_cliente inesperado: %s", creado.NombreCliente)
 	}
 }
+
+// TestCrearIncidente_GuardavidaInvalidoNoLlegaAlRepo prueba que no se registra
+// un incidente si el guardavida responsable no existe.
+func TestCrearIncidente_GuardavidaInvalidoNoLlegaAlRepo(t *testing.T) {
+	repo := &mockSeguridadRepo{}
+	clientes := &mockClienteRepo{
+		clientes: map[int]models.Cliente{
+			1: {ID: 1, Nombre: "Ana Reyes", Membresia: "mensual"},
+		},
+	}
+	pagos := &mockPagoRepo{tienePago: false}
+
+	svc := NewSeguridadService(repo, clientes, pagos)
+
+	_, err := svc.CrearIncidente(models.Incidente{
+		Tipo:         "lesion",
+		Gravedad:     "leve",
+		GuardavidaID: 99,
+		ClienteID:    1,
+	})
+	if err != ErrGuardavidaInvalido {
+		t.Fatalf("se esperaba ErrGuardavidaInvalido, se obtuvo: %v", err)
+	}
+}
