@@ -38,7 +38,10 @@ func (m *mockSeguridadRepo) ListarIncidentes() []models.Incidente { return nil }
 func (m *mockSeguridadRepo) BuscarIncidentePorID(id uint) (models.Incidente, bool) {
 	return models.Incidente{}, false
 }
-func (m *mockSeguridadRepo) CrearIncidente(i models.Incidente) models.Incidente { return i }
+func (m *mockSeguridadRepo) CrearIncidente(i models.Incidente) models.Incidente {
+	i.ID = 1
+	return i
+}
 func (m *mockSeguridadRepo) ActualizarIncidente(id uint, datos models.Incidente) (models.Incidente, bool) {
 	return models.Incidente{}, false
 }
@@ -250,5 +253,43 @@ func TestCrearIncidente_ClienteSinAccesoNoLlegaAlRepo(t *testing.T) {
 	})
 	if err != ErrClienteSinAcceso {
 		t.Fatalf("se esperaba ErrClienteSinAcceso, se obtuvo: %v", err)
+	}
+}
+
+// TestCrearIncidente_ClienteConMembresiaRegistraIncidente prueba el camino
+// feliz para incidentes: si el cliente tiene membresía, no necesita acceso diario.
+func TestCrearIncidente_ClienteConMembresiaRegistraIncidente(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		guardavidas: map[int]models.Guardavida{
+			1: {ID: 1, Nombre: "Carlos Mendoza"},
+		},
+	}
+	clientes := &mockClienteRepo{
+		clientes: map[int]models.Cliente{
+			1: {ID: 1, Nombre: "Ana Reyes", Membresia: "mensual"},
+		},
+	}
+	pagos := &mockPagoRepo{tienePago: false}
+
+	svc := NewSeguridadService(repo, clientes, pagos)
+
+	creado, err := svc.CrearIncidente(models.Incidente{
+		Tipo:         "lesion",
+		Gravedad:     "leve",
+		GuardavidaID: 1,
+		ClienteID:    1,
+	})
+	if err != nil {
+		t.Fatalf("no se esperaba error, se obtuvo: %v", err)
+	}
+
+	if creado.ClienteID != 1 {
+		t.Errorf("cliente_id inesperado: %d", creado.ClienteID)
+	}
+	if creado.NombreCliente != "Ana Reyes" {
+		t.Errorf("nombre_cliente inesperado: %s", creado.NombreCliente)
+	}
+	if creado.NombreGuardavida != "Carlos Mendoza" {
+		t.Errorf("nombre_guardavida inesperado: %s", creado.NombreGuardavida)
 	}
 }
