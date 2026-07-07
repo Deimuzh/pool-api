@@ -109,3 +109,28 @@ func TestAlmacenSQLite_CrearYListarAcceso(t *testing.T) {
 		t.Error("se esperaba que el acceso esté autorizado")
 	}
 }
+
+// TestAlmacenSQLite_BuscarAccesoPorID prueba que un acceso recién creado pueda
+// recuperarse por su ID desde el repositorio real.
+func TestAlmacenSQLite_BuscarAccesoPorID(t *testing.T) {
+	db := abrirDBPrueba(t)
+	if err := db.AutoMigrate(&models.AccesoCliente{}); err != nil {
+		t.Fatalf("falló AutoMigrate de AccesoCliente: %v", err)
+	}
+
+	almacen := NuevoAlmacenSQLite(db)
+
+	creado := almacen.CrearAcceso(models.AccesoCliente{
+		ClienteID:  3,
+		Autorizado: true,
+	})
+
+	encontrado, ok := almacen.BuscarAccesoPorID(creado.ID)
+	if !ok {
+		t.Fatal("se esperaba encontrar el acceso recién creado")
+	}
+
+	if encontrado.ClienteID != 3 {
+		t.Errorf("cliente_id inesperado: %d", encontrado.ClienteID)
+	}
+}
