@@ -18,12 +18,15 @@ func abrirDBPrueba(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatalf("no se pudo abrir la base de datos en memoria: %v", err)
 	}
-	if err := db.AutoMigrate(&models.Guardavida{}); err != nil {
+	if err := db.AutoMigrate(
+		&models.Guardavida{},
+		&models.Incidente{},
+		&models.AccesoCliente{},
+	); err != nil {
 		t.Fatalf("falló AutoMigrate: %v", err)
 	}
 	return db
 }
-
 // TestAlmacenSQLite_CrearYListarGuardavida prueba el repositorio real (sin
 // mocks ni fakes) contra una base sqlite :memory:: crear un Guardavida debe
 // reflejarse al buscarlo por ID y al listarlo. Si CrearGuardavida o
@@ -132,5 +135,172 @@ func TestAlmacenSQLite_BuscarAccesoPorID(t *testing.T) {
 
 	if encontrado.ClienteID != 3 {
 		t.Errorf("cliente_id inesperado: %d", encontrado.ClienteID)
+	}
+}
+// TestAlmacenSQLite_ActualizarGuardavida verifica que el repositorio real pueda
+// actualizar los datos de un guardavida existente usando SQLite en memoria.
+func TestAlmacenSQLite_ActualizarGuardavida(t *testing.T) {
+	db := abrirDBPrueba(t)
+	almacen := NuevoAlmacenSQLite(db)
+
+	creado := almacen.CrearGuardavida(models.Guardavida{
+		Nombre: "Pedro Salazar",
+		Turno:  "mañana",
+	})
+
+	actualizado, ok := almacen.ActualizarGuardavida(creado.ID, models.Guardavida{
+		Nombre: "Pedro Actualizado",
+		Turno:  "noche",
+	})
+
+	if !ok {
+		t.Fatal("se esperaba actualizar el guardavida")
+	}
+	if actualizado.Nombre != "Pedro Actualizado" || actualizado.Turno != "noche" {
+		t.Fatalf("datos inesperados: %+v", actualizado)
+	}
+}
+
+// TestAlmacenSQLite_BorrarGuardavida verifica que el repositorio real pueda
+// eliminar un guardavida y que luego ya no pueda encontrarse por ID.
+func TestAlmacenSQLite_BorrarGuardavida(t *testing.T) {
+	db := abrirDBPrueba(t)
+	almacen := NuevoAlmacenSQLite(db)
+
+	creado := almacen.CrearGuardavida(models.Guardavida{
+		Nombre: "Pedro Salazar",
+		Turno:  "mañana",
+	})
+
+	if !almacen.BorrarGuardavida(creado.ID) {
+		t.Fatal("se esperaba borrar el guardavida")
+	}
+	if _, ok := almacen.BuscarGuardavidaPorID(creado.ID); ok {
+		t.Fatal("no se esperaba encontrar el guardavida borrado")
+	}
+}
+
+// TestAlmacenSQLite_CrearListarYBuscarIncidente verifica que el repositorio real
+// pueda crear, listar y buscar incidentes usando SQLite en memoria.
+func TestAlmacenSQLite_CrearListarYBuscarIncidente(t *testing.T) {
+	db := abrirDBPrueba(t)
+	almacen := NuevoAlmacenSQLite(db)
+
+	incidente := almacen.CrearIncidente(models.Incidente{
+		Tipo:         "lesion",
+		Gravedad:     "leve",
+		GuardavidaID: 1,
+		ClienteID:    2,
+	})
+
+	if incidente.ID == 0 {
+		t.Fatal("se esperaba que GORM asigne ID al incidente")
+	}
+
+	lista := almacen.ListarIncidentes()
+	if len(lista) != 1 {
+		t.Fatalf("se esperaba 1 incidente, se obtuvieron %d", len(lista))
+	}
+
+	encontrado, ok := almacen.BuscarIncidentePorID(incidente.ID)
+	if !ok {
+		t.Fatal("se esperaba encontrar el incidente")
+	}
+	if encontrado.Tipo != "lesion" {
+		t.Fatalf("tipo inesperado: %s", encontrado.Tipo)
+	}
+}
+
+// TestAlmacenSQLite_ActualizarIncidente verifica que el repositorio real pueda
+// actualizar un incidente existente y persistir sus nuevos datos.
+func TestAlmacenSQLite_ActualizarIncidente(t *testing.T) {
+	db := abrirDBPrueba(t)
+	almacen := NuevoAlmacenSQLite(db)
+
+	creado := almacen.CrearIncidente(models.Incidente{
+		Tipo:         "lesion",
+		Gravedad:     "leve",
+		GuardavidaID: 1,
+		ClienteID:    2,
+	})
+
+	actualizado, ok := almacen.ActualizarIncidente(creado.ID, models.Incidente{
+		Tipo:         "rescate",
+		Gravedad:     "media",
+		GuardavidaID: 1,
+		ClienteID:    2,
+	})
+
+	if !ok {
+		t.Fatal("se esperaba actualizar el incidente")
+	}
+	if actualizado.Tipo != "rescate" || actualizado.Gravedad != "media" {
+		t.Fatalf("datos inesperados: %+v", actualizado)
+	}
+}
+
+// TestAlmacenSQLite_BorrarIncidente verifica que el repositorio real pueda
+// eliminar un incidente y que ya no pueda encontrarse por ID.
+func TestAlmacenSQLite_BorrarIncidente(t *testing.T) {
+	db := abrirDBPrueba(t)
+	almacen := NuevoAlmacenSQLite(db)
+
+	creado := almacen.CrearIncidente(models.Incidente{
+		Tipo:         "lesion",
+		Gravedad:     "leve",
+		GuardavidaID: 1,
+		ClienteID:    2,
+	})
+
+	if !almacen.BorrarIncidente(creado.ID) {
+		t.Fatal("se esperaba borrar el incidente")
+	}
+	if _, ok := almacen.BuscarIncidentePorID(creado.ID); ok {
+		t.Fatal("no se esperaba encontrar el incidente borrado")
+	}
+}
+
+// TestAlmacenSQLite_ActualizarAcceso verifica que el repositorio real pueda
+// actualizar el estado de autorización de un acceso existente.
+func TestAlmacenSQLite_ActualizarAcceso(t *testing.T) {
+	db := abrirDBPrueba(t)
+	almacen := NuevoAlmacenSQLite(db)
+
+	creado := almacen.CrearAcceso(models.AccesoCliente{
+		ClienteID:  2,
+		Autorizado: false,
+		Motivo:     "Sin pago",
+	})
+
+	actualizado, ok := almacen.ActualizarAcceso(creado.ID, models.AccesoCliente{
+		ClienteID:  2,
+		Autorizado: true,
+		Motivo:     "",
+	})
+
+	if !ok {
+		t.Fatal("se esperaba actualizar el acceso")
+	}
+	if !actualizado.Autorizado || actualizado.Motivo != "" {
+		t.Fatalf("datos inesperados: %+v", actualizado)
+	}
+}
+
+// TestAlmacenSQLite_BorrarAcceso verifica que el repositorio real pueda eliminar
+// un acceso y que luego ya no pueda encontrarse por ID.
+func TestAlmacenSQLite_BorrarAcceso(t *testing.T) {
+	db := abrirDBPrueba(t)
+	almacen := NuevoAlmacenSQLite(db)
+
+	creado := almacen.CrearAcceso(models.AccesoCliente{
+		ClienteID:  2,
+		Autorizado: true,
+	})
+
+	if !almacen.BorrarAcceso(creado.ID) {
+		t.Fatal("se esperaba borrar el acceso")
+	}
+	if _, ok := almacen.BuscarAccesoPorID(creado.ID); ok {
+		t.Fatal("no se esperaba encontrar el acceso borrado")
 	}
 }
