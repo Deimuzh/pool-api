@@ -439,7 +439,10 @@ async function apiFetch(path) {
   }
 }
 
-const CACHE = { clientes: [], guardavidas: [], equipos: [], quimicos: [] }
+let _clientes = []
+let _guardavidas = []
+let _equipos = []
+let _quimicos = []
 
 async function cargarTodo() {
   const [guardavidas, incidentes, accesos, equipos, mantenimientos, quimicos, clientes, reservas, pagos] =
@@ -455,10 +458,10 @@ async function cargarTodo() {
       apiFetch('/pagos'),
     ])
 
-  CACHE.clientes = clientes
-  CACHE.guardavidas = guardavidas
-  CACHE.equipos = equipos
-  CACHE.quimicos = quimicos
+  _clientes = clientes
+  _guardavidas = guardavidas
+  _equipos = equipos
+  _quimicos = quimicos
 
   document.getElementById('statGuarda').textContent     = guardavidas.length
   document.getElementById('statIncidentes').textContent = incidentes.length
@@ -647,15 +650,15 @@ const FORMS = {
       { label: 'Tipo', name: 'tipo', type: 'text', placeholder: 'Ej. Caída en borde' },
       { label: 'Gravedad', name: 'gravedad', type: 'select', opciones: ['leve', 'moderado', 'grave'] },
       { label: 'Descripción', name: 'descripcion', type: 'text', placeholder: 'Descripción breve del incidente' },
-      { label: 'Guardavida responsable', name: 'guardavida_id', type: 'dynamic-select', source: 'guardavidas' },
-      { label: 'Cliente involucrado (opcional)', name: 'cliente_id', type: 'dynamic-select', source: 'clientes', opcional: true },
+      { label: 'Guardavida responsable', name: 'guardavida_id', type: 'dynamic-select', source: '_guardavidas' },
+      { label: 'Cliente involucrado (opcional)', name: 'cliente_id', type: 'dynamic-select', source: '_clientes', opcional: true },
     ]
   },
   acceso: {
     titulo: 'Registrar acceso de cliente',
     endpoint: '/accesos',
     campos: [
-      { label: 'Cliente', name: 'cliente_id', type: 'dynamic-select', source: 'clientes' },
+      { label: 'Cliente', name: 'cliente_id', type: 'dynamic-select', source: '_clientes' },
     ],
     nota: '⚠️ El sistema verificará automáticamente si el cliente tiene pago de entrada registrado.'
   },
@@ -672,7 +675,7 @@ const FORMS = {
     titulo: 'Nuevo registro de mantenimiento',
     endpoint: '/mantenimientos',
     campos: [
-      { label: 'Equipo', name: 'equipo_id', type: 'dynamic-select', source: 'equipos' },
+      { label: 'Equipo', name: 'equipo_id', type: 'dynamic-select', source: '_equipos' },
       { label: 'Tipo', name: 'tipo', type: 'select', opciones: ['preventivo', 'correctivo'] },
       { label: 'Descripción', name: 'descripcion', type: 'text', placeholder: 'Descripción del trabajo' },
       { label: 'Realizado por', name: 'realizado_por', type: 'text', placeholder: 'Nombre del técnico' },
@@ -706,7 +709,7 @@ const FORMS = {
     titulo: 'Nueva reserva',
     endpoint: '/reservas',
     campos: [
-      { label: 'Cliente', name: 'cliente_id', type: 'dynamic-select', source: 'clientes' },
+      { label: 'Cliente', name: 'cliente_id', type: 'dynamic-select', source: '_clientes' },
       { label: 'Duración (minutos)', name: 'duracion', type: 'number', placeholder: '60' },
       { label: 'Estado', name: 'estado', type: 'select', opciones: ['pendiente', 'confirmada', 'cancelada'] },
     ]
@@ -715,7 +718,7 @@ const FORMS = {
     titulo: 'Registrar pago',
     endpoint: '/pagos',
     campos: [
-      { label: 'Cliente', name: 'cliente_id', type: 'dynamic-select', source: 'clientes' },
+      { label: 'Cliente', name: 'cliente_id', type: 'dynamic-select', source: '_clientes' },
       { label: 'Monto ($)', name: 'monto', type: 'number', placeholder: '0.00' },
       { label: 'Concepto', name: 'concepto', type: 'select', opciones: ['entrada', 'membresia', 'reserva', 'otro'] },
       { label: 'Método de pago', name: 'metodo', type: 'select', opciones: ['efectivo', 'transferencia'] },
@@ -727,11 +730,8 @@ const FORMS = {
 // Construye las <option> de un campo dynamic-select a partir de la lista
 // en cache correspondiente (_guardavidas, _clientes, _equipos...).
 function opcionesDinamicas(source, opcional, valorActual) {
-  const lista = CACHE[source] || []
+  const lista = window[source] || []
   let opts = opcional ? `<option value="0">— Ninguno —</option>` : ''
-  if (lista.length === 0) {
-    opts += `<option value="" disabled>No hay registros disponibles</option>`
-  }
   opts += lista.map(item => {
     const sel = (valorActual !== undefined && Number(valorActual) === item.id) ? 'selected' : ''
     return `<option value="${item.id}" ${sel}>${item.nombre}</option>`
@@ -752,8 +752,8 @@ function openModal(type, id) {
 
   let registro = null
   if (modalEditId != null) {
-    const cacheMap = { guardavida: 'guardavidas', equipo: 'equipos', quimico: 'quimicos' }
-    const lista = CACHE[cacheMap[type]] || []
+    const cacheMap = { guardavida: '_guardavidas', equipo: '_equipos', quimico: '_quimicos' }
+    const lista = window[cacheMap[type]] || []
     registro = lista.find(x => x.id === modalEditId)
   }
 

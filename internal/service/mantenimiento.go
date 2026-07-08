@@ -32,11 +32,7 @@ func (s *MantenimientoService) CrearEquipo(e models.Equipo) (models.Equipo, erro
 	if e.Estado == "" {
 		e.Estado = "operativo"
 	}
-	creado, err := s.repo.CrearEquipo(e)
-	if err != nil {
-		return models.Equipo{}, err
-	}
-	return creado, nil
+	return s.repo.CrearEquipo(e), nil
 }
 
 func (s *MantenimientoService) ActualizarEquipo(id uint, e models.Equipo) (models.Equipo, error) {
@@ -72,14 +68,10 @@ func (s *MantenimientoService) CrearRegistro(rm models.RegistroMantenimiento) (m
 	if rm.EquipoID == 0 || rm.Tipo == "" {
 		return models.RegistroMantenimiento{}, ErrCampoObligatorio
 	}
-	if _, ok := s.repo.BuscarEquipoPorID(rm.EquipoID); !ok {
+	if _, ok := s.repo.BuscarEquipoPorID(int(rm.EquipoID)); !ok {
 		return models.RegistroMantenimiento{}, ErrEquipoInvalido
 	}
-	creado, err := s.repo.CrearRegistro(rm)
-	if err != nil {
-		return models.RegistroMantenimiento{}, err
-	}
-	return creado, nil
+	return s.repo.CrearRegistro(rm), nil
 }
 
 func (s *MantenimientoService) ActualizarRegistro(id uint, rm models.RegistroMantenimiento) (models.RegistroMantenimiento, error) {
@@ -114,11 +106,7 @@ func (s *MantenimientoService) CrearQuimico(q models.ProductoQuimico) (models.Pr
 	if q.Nombre == "" {
 		return models.ProductoQuimico{}, ErrNombreVacio
 	}
-	creado, err := s.repo.CrearQuimico(q)
-	if err != nil {
-		return models.ProductoQuimico{}, err
-	}
-	return creado, nil
+	return s.repo.CrearQuimico(q), nil
 }
 
 func (s *MantenimientoService) ActualizarQuimico(id uint, q models.ProductoQuimico) (models.ProductoQuimico, error) {

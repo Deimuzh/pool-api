@@ -4,38 +4,27 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"pool-api/internal/models"
+	"pool-api/internal/storage"
 
 	"github.com/go-chi/chi/v5"
 )
 
-// ─── CLIENTE ─────────────────────────────────────────────────────────────────
+// CLIENTE
 
 func (s *Server) ListarClientes(w http.ResponseWriter, _ *http.Request) {
 	RespondJSON(w, http.StatusOK, s.Clientes.ListarClientes())
 }
 
-func (s *Server) ObtenerCliente(w http.ResponseWriter, r *http.Request) {
-	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
-		return
-	}
-	c, ok := s.Clientes.ObtenerCliente(uint(idInt))
-	if !ok {
-		RespondError(w, http.StatusNotFound, "cliente no encontrado")
-		return
-	}
-	RespondJSON(w, http.StatusOK, c)
-}
-
 func (s *Server) CrearCliente(w http.ResponseWriter, r *http.Request) {
 	var c models.Cliente
 	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
-		RespondError(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
+		RespondError(w, http.StatusBadRequest, "JSON inválido")
 		return
 	}
+
 	creado, err := s.Clientes.CrearCliente(c)
 	if err != nil {
 		RespondError(w, statusDeError(err), err.Error())
@@ -44,18 +33,37 @@ func (s *Server) CrearCliente(w http.ResponseWriter, r *http.Request) {
 	RespondJSON(w, http.StatusCreated, creado)
 }
 
-func (s *Server) ActualizarCliente(w http.ResponseWriter, r *http.Request) {
-	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
+func (s *Server) ObtenerCliente(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
+		RespondError(w, http.StatusBadRequest, "ID inválido")
 		return
 	}
+
+	cliente, ok := s.Clientes.ObtenerCliente(id)
+	if !ok {
+		RespondError(w, http.StatusNotFound, "Cliente no encontrado")
+		return
+	}
+	RespondJSON(w, http.StatusOK, cliente)
+}
+
+func (s *Server) ActualizarCliente(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		RespondError(w, http.StatusBadRequest, "ID inválido")
+		return
+	}
+
 	var c models.Cliente
 	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
-		RespondError(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
+		RespondError(w, http.StatusBadRequest, "JSON inválido")
 		return
 	}
-	actualizado, err := s.Clientes.ActualizarCliente(uint(idInt), c)
+
+	actualizado, err := s.Clientes.ActualizarCliente(id, c)
 	if err != nil {
 		RespondError(w, statusDeError(err), err.Error())
 		return
@@ -64,146 +72,245 @@ func (s *Server) ActualizarCliente(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) BorrarCliente(w http.ResponseWriter, r *http.Request) {
-	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
+		RespondError(w, http.StatusBadRequest, "ID inválido")
 		return
 	}
-	if err := s.Clientes.BorrarCliente(uint(idInt)); err != nil {
+	if err := s.Clientes.BorrarCliente(id); err != nil {
 		RespondError(w, statusDeError(err), err.Error())
 		return
 	}
 	RespondJSON(w, http.StatusOK, map[string]string{"mensaje": "cliente eliminado"})
 }
 
+func CrearCliente(w http.ResponseWriter, r *http.Request) {
+	panic("use Server.CrearCliente")
+}
+func ListarClientes(w http.ResponseWriter, r *http.Request) {
+	panic("use Server.ListarClientes")
+}
+func ObtenerCliente(w http.ResponseWriter, r *http.Request) {
+	panic("use Server.ObtenerCliente")
+}
+func ActualizarCliente(w http.ResponseWriter, r *http.Request) {
+	panic("use Server.ActualizarCliente")
+}
+func EliminarCliente(w http.ResponseWriter, r *http.Request) {
+	panic("use Server.BorrarCliente")
+}
+
 // ─── RESERVA ─────────────────────────────────────────────────────────────────
 
-func (s *Server) ListarReservas(w http.ResponseWriter, _ *http.Request) {
-	RespondJSON(w, http.StatusOK, s.Clientes.ListarReservas())
-}
-
-func (s *Server) ObtenerReserva(w http.ResponseWriter, r *http.Request) {
-	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
-		return
-	}
-	rv, ok := s.Clientes.ObtenerReserva(uint(idInt))
-	if !ok {
-		RespondError(w, http.StatusNotFound, "reserva no encontrada")
-		return
-	}
-	RespondJSON(w, http.StatusOK, rv)
-}
-
-func (s *Server) CrearReserva(w http.ResponseWriter, r *http.Request) {
+func CrearReserva(w http.ResponseWriter, r *http.Request) {
 	var rv models.Reserva
+
 	if err := json.NewDecoder(r.Body).Decode(&rv); err != nil {
-		RespondError(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
+		http.Error(w, "JSON inválido", http.StatusBadRequest)
 		return
 	}
-	creado, err := s.Clientes.CrearReserva(rv)
-	if err != nil {
-		RespondError(w, statusDeError(err), err.Error())
+
+	if rv.ClienteID == 0 {
+		http.Error(w, "cliente_id es obligatorio", http.StatusBadRequest)
 		return
 	}
-	RespondJSON(w, http.StatusCreated, creado)
+
+	if rv.Estado == "" {
+		rv.Estado = "pendiente"
+	}
+
+	rv.FechaHora = time.Now()
+
+	if err := storage.DB.Create(&rv).Error; err != nil {
+		http.Error(w, "Error al guardar reserva", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(rv)
 }
 
-func (s *Server) ActualizarReserva(w http.ResponseWriter, r *http.Request) {
-	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
+func ListarReservas(w http.ResponseWriter, r *http.Request) {
+	var reservas []models.Reserva
+
+	if err := storage.DB.Find(&reservas).Error; err != nil {
+		http.Error(w, "Error al obtener reservas", http.StatusInternalServerError)
 		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(reservas)
+}
+
+func ObtenerReserva(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "ID inválido", http.StatusBadRequest)
+		return
+	}
+
 	var rv models.Reserva
-	if err := json.NewDecoder(r.Body).Decode(&rv); err != nil {
-		RespondError(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
+	if err := storage.DB.First(&rv, id).Error; err != nil {
+		http.Error(w, "Reserva no encontrada", http.StatusNotFound)
 		return
 	}
-	actualizado, err := s.Clientes.ActualizarReserva(uint(idInt), rv)
-	if err != nil {
-		RespondError(w, statusDeError(err), err.Error())
-		return
-	}
-	RespondJSON(w, http.StatusOK, actualizado)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(rv)
 }
 
-func (s *Server) BorrarReserva(w http.ResponseWriter, r *http.Request) {
-	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
+func ActualizarReserva(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
+		http.Error(w, "ID inválido", http.StatusBadRequest)
 		return
 	}
-	if err := s.Clientes.BorrarReserva(uint(idInt)); err != nil {
-		RespondError(w, statusDeError(err), err.Error())
+
+	var rv models.Reserva
+	if err := storage.DB.First(&rv, id).Error; err != nil {
+		http.Error(w, "Reserva no encontrada", http.StatusNotFound)
 		return
 	}
-	RespondJSON(w, http.StatusOK, map[string]string{"mensaje": "reserva eliminada"})
+
+	if err := json.NewDecoder(r.Body).Decode(&rv); err != nil {
+		http.Error(w, "JSON inválido", http.StatusBadRequest)
+		return
+	}
+
+	if err := storage.DB.Save(&rv).Error; err != nil {
+		http.Error(w, "Error al actualizar reserva", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(rv)
+}
+
+func EliminarReserva(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "ID inválido", http.StatusBadRequest)
+		return
+	}
+
+	if err := storage.DB.Delete(&models.Reserva{}, id).Error; err != nil {
+		http.Error(w, "Error al eliminar reserva", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"mensaje":"reserva eliminada"}`))
 }
 
 // ─── PAGO ────────────────────────────────────────────────────────────────────
 
-func (s *Server) ListarPagos(w http.ResponseWriter, _ *http.Request) {
-	RespondJSON(w, http.StatusOK, s.Clientes.ListarPagos())
-}
-
-func (s *Server) ObtenerPago(w http.ResponseWriter, r *http.Request) {
-	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
-		return
-	}
-	p, ok := s.Clientes.ObtenerPago(uint(idInt))
-	if !ok {
-		RespondError(w, http.StatusNotFound, "pago no encontrado")
-		return
-	}
-	RespondJSON(w, http.StatusOK, p)
-}
-
-func (s *Server) CrearPago(w http.ResponseWriter, r *http.Request) {
+func CrearPago(w http.ResponseWriter, r *http.Request) {
 	var p models.Pago
+
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-		RespondError(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
+		http.Error(w, "JSON inválido", http.StatusBadRequest)
 		return
 	}
-	creado, err := s.Clientes.CrearPago(p)
-	if err != nil {
-		RespondError(w, statusDeError(err), err.Error())
+
+	if p.ClienteID == 0 || p.Monto <= 0 {
+		http.Error(w, "cliente_id y monto son obligatorios", http.StatusBadRequest)
 		return
 	}
-	RespondJSON(w, http.StatusCreated, creado)
+
+	p.FechaHora = time.Now()
+
+	if err := storage.DB.Create(&p).Error; err != nil {
+		http.Error(w, "Error al guardar pago", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(p)
 }
 
-func (s *Server) ActualizarPago(w http.ResponseWriter, r *http.Request) {
-	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
+func ListarPagos(w http.ResponseWriter, r *http.Request) {
+	var pagos []models.Pago
+
+	if err := storage.DB.Find(&pagos).Error; err != nil {
+		http.Error(w, "Error al obtener pagos", http.StatusInternalServerError)
 		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(pagos)
+}
+
+func ObtenerPago(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "ID inválido", http.StatusBadRequest)
+		return
+	}
+
 	var p models.Pago
-	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-		RespondError(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
+	if err := storage.DB.First(&p, id).Error; err != nil {
+		http.Error(w, "Pago no encontrado", http.StatusNotFound)
 		return
 	}
-	actualizado, err := s.Clientes.ActualizarPago(uint(idInt), p)
-	if err != nil {
-		RespondError(w, statusDeError(err), err.Error())
-		return
-	}
-	RespondJSON(w, http.StatusOK, actualizado)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(p)
 }
 
-func (s *Server) BorrarPago(w http.ResponseWriter, r *http.Request) {
-	idInt, err := strconv.Atoi(chi.URLParam(r, "id"))
+func ActualizarPago(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
+		http.Error(w, "ID inválido", http.StatusBadRequest)
 		return
 	}
-	if err := s.Clientes.BorrarPago(uint(idInt)); err != nil {
-		RespondError(w, statusDeError(err), err.Error())
+
+	var p models.Pago
+	if err := storage.DB.First(&p, id).Error; err != nil {
+		http.Error(w, "Pago no encontrado", http.StatusNotFound)
 		return
 	}
-	RespondJSON(w, http.StatusOK, map[string]string{"mensaje": "pago eliminado"})
+
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		http.Error(w, "JSON inválido", http.StatusBadRequest)
+		return
+	}
+
+	if err := storage.DB.Save(&p).Error; err != nil {
+		http.Error(w, "Error al actualizar pago", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(p)
+}
+
+func EliminarPago(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "ID inválido", http.StatusBadRequest)
+		return
+	}
+
+	if err := storage.DB.Delete(&models.Pago{}, id).Error; err != nil {
+		http.Error(w, "Error al eliminar pago", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"mensaje":"pago eliminado"}`))
 }

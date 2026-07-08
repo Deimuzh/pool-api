@@ -47,7 +47,7 @@ func TestAlmacenSQLite_CrearYListarGuardavida(t *testing.T) {
 	}
 
 	// Buscar por ID debe reflejar lo creado.
-	encontrado, ok := almacen.BuscarGuardavidaPorID(creado.ID)
+	encontrado, ok := almacen.BuscarGuardavidaPorID(int(creado.ID))
 	if !ok {
 		t.Fatal("se esperaba encontrar el guardavida recién creado")
 	}

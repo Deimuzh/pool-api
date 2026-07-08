@@ -47,7 +47,7 @@ type SeguridadRepository interface {
 type EquipoRepository interface {
 	ListarEquipos() []models.Equipo
 	BuscarEquipoPorID(id uint) (models.Equipo, bool)
-	CrearEquipo(e models.Equipo) (models.Equipo, error)
+	CrearEquipo(e models.Equipo) models.Equipo
 	ActualizarEquipo(id uint, datos models.Equipo) (models.Equipo, bool)
 	BorrarEquipo(id uint) bool
 }
@@ -55,7 +55,7 @@ type EquipoRepository interface {
 type RegistroMantenimientoRepository interface {
 	ListarRegistros() []models.RegistroMantenimiento
 	BuscarRegistroPorID(id uint) (models.RegistroMantenimiento, bool)
-	CrearRegistro(rm models.RegistroMantenimiento) (models.RegistroMantenimiento, error)
+	CrearRegistro(rm models.RegistroMantenimiento) models.RegistroMantenimiento
 	ActualizarRegistro(id uint, datos models.RegistroMantenimiento) (models.RegistroMantenimiento, bool)
 	BorrarRegistro(id uint) bool
 }
@@ -63,7 +63,7 @@ type RegistroMantenimientoRepository interface {
 type ProductoQuimicoRepository interface {
 	ListarQuimicos() []models.ProductoQuimico
 	BuscarQuimicoPorID(id uint) (models.ProductoQuimico, bool)
-	CrearQuimico(q models.ProductoQuimico) (models.ProductoQuimico, error)
+	CrearQuimico(q models.ProductoQuimico) models.ProductoQuimico
 	ActualizarQuimico(id uint, datos models.ProductoQuimico) (models.ProductoQuimico, bool)
 	BorrarQuimico(id uint) bool
 }
@@ -79,7 +79,7 @@ type MantenimientoRepository interface {
 type ClienteRepository interface {
 	ListarClientes() []models.Cliente
 	BuscarClientePorID(id uint) (models.Cliente, bool)
-	CrearCliente(c models.Cliente) (models.Cliente, error)
+	CrearCliente(c models.Cliente) models.Cliente
 	ActualizarCliente(id uint, datos models.Cliente) (models.Cliente, bool)
 	BorrarCliente(id uint) bool
 }
@@ -87,7 +87,7 @@ type ClienteRepository interface {
 type ReservaRepository interface {
 	ListarReservas() []models.Reserva
 	BuscarReservaPorID(id uint) (models.Reserva, bool)
-	CrearReserva(rv models.Reserva) (models.Reserva, error)
+	CrearReserva(rv models.Reserva) models.Reserva
 	ActualizarReserva(id uint, datos models.Reserva) (models.Reserva, bool)
 	BorrarReserva(id uint) bool
 }
@@ -95,7 +95,7 @@ type ReservaRepository interface {
 type PagoRepository interface {
 	ListarPagos() []models.Pago
 	BuscarPagoPorID(id uint) (models.Pago, bool)
-	CrearPago(p models.Pago) (models.Pago, error)
+	CrearPago(p models.Pago) models.Pago
 	ActualizarPago(id uint, datos models.Pago) (models.Pago, bool)
 	BorrarPago(id uint) bool
 	// ClienteTienePagoEntrada permite a otros módulos (Seguridad) verificar
