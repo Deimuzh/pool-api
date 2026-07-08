@@ -304,3 +304,52 @@ func TestAlmacenSQLite_BorrarAcceso(t *testing.T) {
 		t.Fatal("no se esperaba encontrar el acceso borrado")
 	}
 }
+// TestAlmacenSQLite_ActualizarGuardavidaInexistente verifica que actualizar
+// un guardavida inexistente devuelva ok=false.
+func TestAlmacenSQLite_ActualizarGuardavidaInexistente(t *testing.T) {
+	db := abrirDBPrueba(t)
+	almacen := NuevoAlmacenSQLite(db)
+
+	_, ok := almacen.ActualizarGuardavida(999, models.Guardavida{
+		Nombre: "No existe",
+		Turno:  "noche",
+	})
+
+	if ok {
+		t.Fatal("no se esperaba actualizar un guardavida inexistente")
+	}
+}
+
+// TestAlmacenSQLite_ActualizarIncidenteInexistente verifica que actualizar
+// un incidente inexistente devuelva ok=false.
+func TestAlmacenSQLite_ActualizarIncidenteInexistente(t *testing.T) {
+	db := abrirDBPrueba(t)
+	almacen := NuevoAlmacenSQLite(db)
+
+	_, ok := almacen.ActualizarIncidente(999, models.Incidente{
+		Tipo:         "rescate",
+		Gravedad:     "media",
+		GuardavidaID: 1,
+		ClienteID:    2,
+	})
+
+	if ok {
+		t.Fatal("no se esperaba actualizar un incidente inexistente")
+	}
+}
+
+// TestAlmacenSQLite_ActualizarAccesoInexistente verifica que actualizar
+// un acceso inexistente devuelva ok=false.
+func TestAlmacenSQLite_ActualizarAccesoInexistente(t *testing.T) {
+	db := abrirDBPrueba(t)
+	almacen := NuevoAlmacenSQLite(db)
+
+	_, ok := almacen.ActualizarAcceso(999, models.AccesoCliente{
+		ClienteID:  2,
+		Autorizado: true,
+	})
+
+	if ok {
+		t.Fatal("no se esperaba actualizar un acceso inexistente")
+	}
+}
