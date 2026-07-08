@@ -29,9 +29,9 @@ HTTP -> Handler -> Service -> Repository -> GORM -> SQLite/PostgreSQL
 
 ## Responsables por modulo
 
-- **Seguridad**: responsable del modulo de guardavidas, accesos e incidentes.
-- **Clientes**: responsable del modulo de clientes, reservas y pagos.
-- **Mantenimiento**: responsable del modulo de equipos, mantenimientos y quimicos.
+- **Seguridad**: Anthony Joel Mendoza Arcentales.
+- **Clientes**: Garcia Cedeno Geovanny Alexander.
+- **Mantenimiento**: Lucas Holguin Nathaly Jasmin.
 - **Auth, Docker, CI e integracion**: responsabilidad grupal.
 
 ## Arquitectura
