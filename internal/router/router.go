@@ -9,7 +9,7 @@ import (
 	"pool-api/internal/handlers"
 )
 
-func NuevoRouter() *chi.Mux {
+func NuevoRouter(server *handlers.Server) *chi.Mux {
 	r := chi.NewRouter()
 
 	// Middlewares globales
@@ -26,77 +26,75 @@ func NuevoRouter() *chi.Mux {
 
 		// ── SEGURIDAD ────────────────────────────────────────────────────────
 		r.Route("/guardavidas", func(r chi.Router) {
-			r.Post("/", handlers.CrearGuardavida)
-			r.Get("/", handlers.ListarGuardavidas)
-			r.Get("/{id}", handlers.ObtenerGuardavida)
-			r.Patch("/{id}", handlers.ActualizarGuardavida)
-			r.Delete("/{id}", handlers.EliminarGuardavida)
+			r.Post("/", server.CrearGuardavida)
+			r.Get("/", server.ListarGuardavidas)
+			r.Get("/{id}", server.ObtenerGuardavida)
+			r.Patch("/{id}", server.ActualizarGuardavida)
+			r.Delete("/{id}", server.BorrarGuardavida)
 		})
 
 		r.Route("/incidentes", func(r chi.Router) {
-			r.Post("/", handlers.CrearIncidente)
-			r.Get("/", handlers.ListarIncidentes)
-			r.Get("/{id}", handlers.ObtenerIncidente)
-			r.Patch("/{id}", handlers.ActualizarIncidente)
-			r.Delete("/{id}", handlers.EliminarIncidente)
+			r.Post("/", server.CrearIncidente)
+			r.Get("/", server.ListarIncidentes)
+			r.Get("/{id}", server.ObtenerIncidente)
+			r.Patch("/{id}", server.ActualizarIncidente)
+			r.Delete("/{id}", server.BorrarIncidente)
 		})
 
 		r.Route("/accesos", func(r chi.Router) {
-			r.Post("/", handlers.CrearAcceso)
-			r.Get("/", handlers.ListarAccesos)
-			r.Get("/{id}", handlers.ObtenerAcceso)
-			r.Patch("/{id}", handlers.ActualizarAcceso)
-			r.Delete("/{id}", handlers.EliminarAcceso)
+			r.Post("/", server.CrearAcceso)
+			r.Get("/", server.ListarAccesos)
+			r.Delete("/{id}", server.BorrarAcceso)
 		})
 
 		// ── MANTENIMIENTO ────────────────────────────────────────────────────
 		r.Route("/equipos", func(r chi.Router) {
-			r.Post("/", handlers.CrearEquipo)
-			r.Get("/", handlers.ListarEquipos)
-			r.Get("/{id}", handlers.ObtenerEquipo)
-			r.Patch("/{id}", handlers.ActualizarEquipo)
-			r.Delete("/{id}", handlers.EliminarEquipo)
+			r.Post("/", server.CrearEquipo)
+			r.Get("/", server.ListarEquipos)
+			r.Get("/{id}", server.ObtenerEquipo)
+			r.Patch("/{id}", server.ActualizarEquipo)
+			r.Delete("/{id}", server.BorrarEquipo)
 		})
 
 		r.Route("/mantenimientos", func(r chi.Router) {
-			r.Post("/", handlers.CrearRegistroMantenimiento)
-			r.Get("/", handlers.ListarRegistrosMantenimiento)
-			r.Get("/{id}", handlers.ObtenerRegistroMantenimiento)
-			r.Patch("/{id}", handlers.ActualizarRegistroMantenimiento)
-			r.Delete("/{id}", handlers.EliminarRegistroMantenimiento)
+			r.Post("/", server.CrearRegistroMantenimiento)
+			r.Get("/", server.ListarRegistrosMantenimiento)
+			r.Get("/{id}", server.ObtenerRegistroMantenimiento)
+			r.Patch("/{id}", server.ActualizarRegistroMantenimiento)
+			r.Delete("/{id}", server.BorrarRegistroMantenimiento)
 		})
 
 		r.Route("/quimicos", func(r chi.Router) {
-			r.Post("/", handlers.CrearProductoQuimico)
-			r.Get("/", handlers.ListarProductosQuimicos)
-			r.Get("/{id}", handlers.ObtenerProductoQuimico)
-			r.Patch("/{id}", handlers.ActualizarProductoQuimico)
-			r.Delete("/{id}", handlers.EliminarProductoQuimico)
+			r.Post("/", server.CrearQuimico)
+			r.Get("/", server.ListarQuimicos)
+			r.Get("/{id}", server.ObtenerQuimico)
+			r.Patch("/{id}", server.ActualizarQuimico)
+			r.Delete("/{id}", server.BorrarQuimico)
 		})
 
 		// ── CLIENTES ─────────────────────────────────────────────────────────
 		r.Route("/clientes", func(r chi.Router) {
-			r.Post("/", handlers.CrearCliente)
-			r.Get("/", handlers.ListarClientes)
-			r.Get("/{id}", handlers.ObtenerCliente)
-			r.Patch("/{id}", handlers.ActualizarCliente)
-			r.Delete("/{id}", handlers.EliminarCliente)
+			r.Post("/", server.CrearCliente)
+			r.Get("/", server.ListarClientes)
+			r.Get("/{id}", server.ObtenerCliente)
+			r.Patch("/{id}", server.ActualizarCliente)
+			r.Delete("/{id}", server.BorrarCliente)
 		})
 
 		r.Route("/reservas", func(r chi.Router) {
-			r.Post("/", handlers.CrearReserva)
-			r.Get("/", handlers.ListarReservas)
-			r.Get("/{id}", handlers.ObtenerReserva)
-			r.Patch("/{id}", handlers.ActualizarReserva)
-			r.Delete("/{id}", handlers.EliminarReserva)
+			r.Post("/", server.CrearReserva)
+			r.Get("/", server.ListarReservas)
+			r.Get("/{id}", server.ObtenerReserva)
+			r.Patch("/{id}", server.ActualizarReserva)
+			r.Delete("/{id}", server.BorrarReserva)
 		})
 
 		r.Route("/pagos", func(r chi.Router) {
-			r.Post("/", handlers.CrearPago)
-			r.Get("/", handlers.ListarPagos)
-			r.Get("/{id}", handlers.ObtenerPago)
-			r.Patch("/{id}", handlers.ActualizarPago)
-			r.Delete("/{id}", handlers.EliminarPago)
+			r.Post("/", server.CrearPago)
+			r.Get("/", server.ListarPagos)
+			r.Get("/{id}", server.ObtenerPago)
+			r.Patch("/{id}", server.ActualizarPago)
+			r.Delete("/{id}", server.BorrarPago)
 		})
 	})
 
