@@ -1040,3 +1040,45 @@ func TestBorrarAcceso_Existente(t *testing.T) {
 		t.Fatalf("se esperaba que el acceso fuera eliminado, quedan %d", len(repo.accesos))
 	}
 }
+// TestCrearIncidente_ClienteInvalidoNoLlegaAlRepo verifica que no se registre
+// un incidente cuando el cliente involucrado no existe.
+func TestCrearIncidente_ClienteInvalidoNoLlegaAlRepo(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		guardavidas: map[int]models.Guardavida{
+			1: {ID: 1, Nombre: "Carlos Mendoza"},
+		},
+	}
+	clientes := &mockClienteRepo{
+		clientes: map[int]models.Cliente{},
+	}
+	svc := NewSeguridadService(repo, clientes, &mockPagoRepo{})
+
+	_, err := svc.CrearIncidente(models.Incidente{
+		Tipo:         "lesion",
+		Gravedad:     "leve",
+		GuardavidaID: 1,
+		ClienteID:    99,
+	})
+
+	if err != ErrClienteInvalido {
+		t.Fatalf("se esperaba ErrClienteInvalido, se obtuvo %v", err)
+	}
+}
+// TestCrearAcceso_ClienteIDCeroDevuelveCampoObligatorio verifica que el service
+// rechace un acceso sin cliente_id antes de consultar repositorios.
+func TestCrearAcceso_ClienteIDCeroDevuelveCampoObligatorio(t *testing.T) {
+	repo := &mockSeguridadRepo{}
+	clientes := &mockClienteRepo{clientes: map[int]models.Cliente{}}
+	pagos := &mockPagoRepo{}
+
+	svc := NewSeguridadService(repo, clientes, pagos)
+
+	_, err := svc.CrearAcceso(0)
+
+	if err != ErrCampoObligatorio {
+		t.Fatalf("se esperaba ErrCampoObligatorio, se obtuvo %v", err)
+	}
+	if repo.crearAccesoLlamado {
+		t.Fatal("CrearAcceso no debió llegar al repositorio con cliente_id cero")
+	}
+}
