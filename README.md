@@ -27,7 +27,16 @@ HTTP -> Handler -> Service -> Repository -> GORM -> SQLite/PostgreSQL
 - **Mantenimiento**: equipos, registros de mantenimiento y productos quimicos.
 - **Auth**: login, usuarios administrativos, JWT y roles.
 
+## Responsables por modulo
+
+- **Seguridad**: responsable del modulo de guardavidas, accesos e incidentes.
+- **Clientes**: responsable del modulo de clientes, reservas y pagos.
+- **Mantenimiento**: responsable del modulo de equipos, mantenimientos y quimicos.
+- **Auth, Docker, CI e integracion**: responsabilidad grupal.
+
 ## Arquitectura
+
+Diagrama detallado: [`docs/arquitectura.md`](docs/arquitectura.md).
 
 - `cmd/piscina-api/main.go`: ensambla configuracion, base de datos, services, handlers, router y servidor HTTP.
 - `internal/models`: structs del dominio con tags JSON/GORM.
@@ -208,6 +217,21 @@ El modulo Seguridad incluye pruebas de:
 - handler con `httptest`;
 - repository GORM con SQLite en memoria.
 
+## Postman
+
+La coleccion exportada para probar la API esta en:
+
+```txt
+docs/postman/piscina-api.postman_collection.json
+```
+
+Flujo recomendado para demo:
+
+1. Ejecutar `docker compose up --build`.
+2. Importar la coleccion en Postman.
+3. Ejecutar `Auth / Login admin` para guardar el JWT en la variable `token`.
+4. Probar endpoints protegidos de Seguridad, Clientes y Mantenimiento.
+
 ## CI
 
 La pipeline de GitHub Actions esta en `.github/workflows/ci.yml` y ejecuta:
@@ -218,9 +242,13 @@ go test ./... -cover
 go build ./cmd/piscina-api
 ```
 
+## Documentacion del Hito 3
+
+- Diagrama de arquitectura: [`docs/arquitectura.md`](docs/arquitectura.md).
+- Coleccion Postman: [`docs/postman/piscina-api.postman_collection.json`](docs/postman/piscina-api.postman_collection.json).
+- Documento de cierre: [`docs/cierre.md`](docs/cierre.md).
+
 ## Estado pendiente
 
-- Exportar coleccion Postman al repositorio.
-- Probar `docker compose up --build` en una maquina con Docker instalado.
 - Aumentar cobertura total de tests.
-- Configurar branch protection en GitHub.
+- Completar nombres de responsables por modulo si el docente lo solicita explicitamente.
