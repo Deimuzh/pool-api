@@ -20,6 +20,8 @@ import (
 // poder probar el handler de punta a punta sin SQLite.
 type fakeSeguridadRepo struct {
 	guardavidas []models.Guardavida
+	incidentes  []models.Incidente
+	accesos     []models.AccesoCliente
 	siguienteID uint
 }
 
@@ -39,55 +41,147 @@ func (f *fakeSeguridadRepo) CrearGuardavida(g models.Guardavida) models.Guardavi
 	return g
 }
 func (f *fakeSeguridadRepo) ActualizarGuardavida(id uint, datos models.Guardavida) (models.Guardavida, bool) {
+	for i := range f.guardavidas {
+		if f.guardavidas[i].ID == id {
+			datos.ID = id
+			f.guardavidas[i] = datos
+			return datos, true
+		}
+	}
 	return models.Guardavida{}, false
 }
-func (f *fakeSeguridadRepo) BorrarGuardavida(id uint) bool { return false }
+func (f *fakeSeguridadRepo) BorrarGuardavida(id uint) bool {
+	for i := range f.guardavidas {
+		if f.guardavidas[i].ID == id {
+			f.guardavidas = append(f.guardavidas[:i], f.guardavidas[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
 
-func (f *fakeSeguridadRepo) ListarIncidentes() []models.Incidente { return nil }
+func (f *fakeSeguridadRepo) ListarIncidentes() []models.Incidente {
+	return f.incidentes
+}
+
 func (f *fakeSeguridadRepo) BuscarIncidentePorID(id uint) (models.Incidente, bool) {
+	for _, inc := range f.incidentes {
+		if inc.ID == id {
+			return inc, true
+		}
+	}
 	return models.Incidente{}, false
 }
-func (f *fakeSeguridadRepo) CrearIncidente(i models.Incidente) models.Incidente { return i }
-func (f *fakeSeguridadRepo) ActualizarIncidente(id uint, datos models.Incidente) (models.Incidente, bool) {
-	return models.Incidente{}, false
-}
-func (f *fakeSeguridadRepo) BorrarIncidente(id uint) bool { return false }
 
-func (f *fakeSeguridadRepo) ListarAccesos() []models.AccesoCliente { return nil }
+func (f *fakeSeguridadRepo) CrearIncidente(i models.Incidente) models.Incidente {
+	f.siguienteID++
+	i.ID = f.siguienteID
+	f.incidentes = append(f.incidentes, i)
+	return i
+}
+
+func (f *fakeSeguridadRepo) ActualizarIncidente(id uint, datos models.Incidente) (models.Incidente, bool) {
+	for i := range f.incidentes {
+		if f.incidentes[i].ID == id {
+			datos.ID = id
+			f.incidentes[i] = datos
+			return datos, true
+		}
+	}
+	return models.Incidente{}, false
+}
+func (f *fakeSeguridadRepo) BorrarIncidente(id uint) bool {
+	for i := range f.incidentes {
+		if f.incidentes[i].ID == id {
+			f.incidentes = append(f.incidentes[:i], f.incidentes[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+func (f *fakeSeguridadRepo) ListarAccesos() []models.AccesoCliente {
+	return f.accesos
+}
+
 func (f *fakeSeguridadRepo) BuscarAccesoPorID(id uint) (models.AccesoCliente, bool) {
+	for _, a := range f.accesos {
+		if a.ID == id {
+			return a, true
+		}
+	}
 	return models.AccesoCliente{}, false
 }
-func (f *fakeSeguridadRepo) CrearAcceso(a models.AccesoCliente) models.AccesoCliente { return a }
+
+func (f *fakeSeguridadRepo) CrearAcceso(a models.AccesoCliente) models.AccesoCliente {
+	f.siguienteID++
+	a.ID = f.siguienteID
+	f.accesos = append(f.accesos, a)
+	return a
+}
+
 func (f *fakeSeguridadRepo) ActualizarAcceso(id uint, datos models.AccesoCliente) (models.AccesoCliente, bool) {
+	for i := range f.accesos {
+		if f.accesos[i].ID == id {
+			datos.ID = id
+			f.accesos[i] = datos
+			return datos, true
+		}
+	}
 	return models.AccesoCliente{}, false
 }
-func (f *fakeSeguridadRepo) BorrarAcceso(id uint) bool { return false }
+
+func (f *fakeSeguridadRepo) BorrarAcceso(id uint) bool {
+	for i := range f.accesos {
+		if f.accesos[i].ID == id {
+			f.accesos = append(f.accesos[:i], f.accesos[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
 
 // fakeClienteRepo y fakePagoRepo: SeguridadService los necesita para
 // construirse, pero estos tests de Guardavida no los usan, así que basta
 // con que implementen la interfaz sin hacer nada relevante.
-type fakeClienteRepo struct{}
+type fakeClienteRepo struct {
+	clientes map[uint]models.Cliente
+}
 
 func (f *fakeClienteRepo) ListarClientes() []models.Cliente { return nil }
+
 func (f *fakeClienteRepo) BuscarClientePorID(id uint) (models.Cliente, bool) {
-	return models.Cliente{}, false
+	c, ok := f.clientes[id]
+	return c, ok
 }
+
 func (f *fakeClienteRepo) CrearCliente(c models.Cliente) (models.Cliente, error) { return c, nil }
+
 func (f *fakeClienteRepo) ActualizarCliente(id uint, datos models.Cliente) (models.Cliente, bool) {
 	return models.Cliente{}, false
 }
+
 func (f *fakeClienteRepo) BorrarCliente(id uint) bool { return false }
 
-type fakePagoRepo struct{}
+type fakePagoRepo struct {
+	tienePago bool
+}
 
-func (f *fakePagoRepo) ListarPagos() []models.Pago                  { return nil }
+func (f *fakePagoRepo) ListarPagos() []models.Pago { return nil }
+
 func (f *fakePagoRepo) BuscarPagoPorID(id uint) (models.Pago, bool) { return models.Pago{}, false }
+
 func (f *fakePagoRepo) CrearPago(p models.Pago) (models.Pago, error) { return p, nil }
+
 func (f *fakePagoRepo) ActualizarPago(id uint, datos models.Pago) (models.Pago, bool) {
 	return models.Pago{}, false
 }
-func (f *fakePagoRepo) BorrarPago(id uint) bool                     { return false }
-func (f *fakePagoRepo) ClienteTienePagoEntrada(clienteID uint) bool { return false }
+
+func (f *fakePagoRepo) BorrarPago(id uint) bool { return false }
+
+func (f *fakePagoRepo) ClienteTienePagoEntrada(clienteID uint) bool {
+	return f.tienePago
+}
 
 // fakeUsuarioRepo permite generar un JWT real vía AuthService.Login, igual
 // que en producción, sin tocar una base de datos.
@@ -147,6 +241,15 @@ func montarRouterPrueba(t *testing.T) (router chi.Router, tokenValido string) {
 			r.Route("/guardavidas", func(r chi.Router) {
 				r.Get("/", srv.ListarGuardavidas)
 				r.Post("/", srv.CrearGuardavida)
+				r.Get("/{id}", srv.ObtenerGuardavida)
+				r.Put("/{id}", srv.ActualizarGuardavida)
+				r.Delete("/{id}", srv.BorrarGuardavida)
+			})
+
+			r.Route("/accesos", func(r chi.Router) {
+				r.Get("/", srv.ListarAccesos)
+				r.Post("/", srv.CrearAcceso)
+				r.Delete("/{id}", srv.BorrarAcceso)
 			})
 		})
 	})
@@ -211,5 +314,91 @@ func TestCrearGuardavida_ConToken_CreaYPersisteEnFake(t *testing.T) {
 	}
 	if len(lista) != 1 {
 		t.Fatalf("se esperaba 1 guardavida en la lista, se obtuvieron %d", len(lista))
+	}
+}
+
+// TestObtenerGuardavida_ConToken_OK verifica que el handler pueda devolver
+// un guardavida existente cuando la petición tiene JWT válido.
+func TestObtenerGuardavida_ConToken_OK(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	body, _ := json.Marshal(models.Guardavida{Nombre: "Sofía Loor", Turno: "mañana"})
+	reqCrear := httptest.NewRequest(http.MethodPost, "/api/v1/guardavidas/", bytes.NewReader(body))
+	reqCrear.Header.Set("Authorization", "Bearer "+token)
+	reqCrear.Header.Set("Content-Type", "application/json")
+	recCrear := httptest.NewRecorder()
+	router.ServeHTTP(recCrear, reqCrear)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/guardavidas/1", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("se esperaba 200, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+	var guardavida models.Guardavida
+	if err := json.Unmarshal(rec.Body.Bytes(), &guardavida); err != nil {
+		t.Fatalf("no se pudo decodificar la respuesta: %v", err)
+	}
+	if guardavida.Nombre != "Sofía Loor" {
+		t.Fatalf("nombre inesperado: %s", guardavida.Nombre)
+	}
+}
+
+// TestActualizarGuardavida_ConToken_OK verifica que el handler permita actualizar
+// un guardavida existente cuando el JWT es válido.
+func TestActualizarGuardavida_ConToken_OK(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	bodyCrear, _ := json.Marshal(models.Guardavida{Nombre: "Sofía Loor", Turno: "mañana"})
+	reqCrear := httptest.NewRequest(http.MethodPost, "/api/v1/guardavidas/", bytes.NewReader(bodyCrear))
+	reqCrear.Header.Set("Authorization", "Bearer "+token)
+	reqCrear.Header.Set("Content-Type", "application/json")
+	recCrear := httptest.NewRecorder()
+	router.ServeHTTP(recCrear, reqCrear)
+
+	bodyActualizar, _ := json.Marshal(models.Guardavida{Nombre: "Sofía Actualizada", Turno: "noche"})
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/guardavidas/1", bytes.NewReader(bodyActualizar))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("se esperaba 200, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var guardavida models.Guardavida
+	if err := json.Unmarshal(rec.Body.Bytes(), &guardavida); err != nil {
+		t.Fatalf("no se pudo decodificar la respuesta: %v", err)
+	}
+	if guardavida.Nombre != "Sofía Actualizada" || guardavida.Turno != "noche" {
+		t.Fatalf("guardavida inesperado: %+v", guardavida)
+	}
+}
+
+// TestBorrarGuardavida_ConToken_OK verifica que el handler permita eliminar
+// un guardavida existente y responda 200.
+func TestBorrarGuardavida_ConToken_OK(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	bodyCrear, _ := json.Marshal(models.Guardavida{Nombre: "Sofía Loor", Turno: "mañana"})
+	reqCrear := httptest.NewRequest(http.MethodPost, "/api/v1/guardavidas/", bytes.NewReader(bodyCrear))
+	reqCrear.Header.Set("Authorization", "Bearer "+token)
+	reqCrear.Header.Set("Content-Type", "application/json")
+	recCrear := httptest.NewRecorder()
+	router.ServeHTTP(recCrear, reqCrear)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/guardavidas/1", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("se esperaba 204, se obtuvo %d: %s", rec.Code, rec.Body.String())
 	}
 }
