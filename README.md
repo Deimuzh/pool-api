@@ -90,6 +90,7 @@ Esto levanta:
 
 - API Go en `http://localhost:8080`
 - PostgreSQL 16 en el servicio `postgres`
+- Seeder en el servicio `seeder`, que ejecuta migraciones y datos iniciales antes de iniciar la API
 - volumen persistente `postgres-data`
 
 Para detener:
