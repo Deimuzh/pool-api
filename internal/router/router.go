@@ -6,7 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"piscina-comunitaria-api/internal/handlers"
+	"pool-api/internal/handlers"
 )
 
 func NuevoRouter() *chi.Mux {
