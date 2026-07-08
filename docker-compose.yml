@@ -19,6 +19,25 @@ services:
     restart: unless-stopped
 
   # API Go de la piscina. Se construye con el Dockerfile local.
+  seeder:
+    build: .
+    container_name: piscina-seeder
+    command: ["/app/seed"]
+    environment:
+      PUERTO: ":8080"
+      DB_DRIVER: postgres
+      DB_DSN: "host=postgres user=piscina password=piscina123 dbname=piscina port=5432 sslmode=disable TimeZone=America/Guayaquil"
+      RUTA_DB: piscina.db
+      JWT_SECRETO: "cambia-esto-en-produccion"
+      JWT_DURACION: 24h
+      HTTP_READ_TIMEOUT: 10s
+      HTTP_WRITE_TIMEOUT: 10s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  # API Go de la piscina. Se construye con el Dockerfile local.
   piscina-api:
     build: .
     container_name: piscina-api
@@ -37,6 +56,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      seeder:
+        condition: service_completed_successfully
     restart: unless-stopped
 
 volumes:
