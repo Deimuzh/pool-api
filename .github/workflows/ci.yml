@@ -2,12 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [main, develop, feat/modulo-mantenimiento]
+    branches: [main, develop, "feat/**"]
   pull_request:
     branches: [main, develop]
 
 jobs:
   lint-test-build:
+    name: lint-test-build
     runs-on: ubuntu-latest
 
     steps:
@@ -23,7 +24,7 @@ jobs:
       - name: Descargar dependencias
         run: go mod download
 
-      - name: Lint con go vet
+      - name: Lint basico con go vet
         run: go vet ./...
 
       - name: Ejecutar tests
