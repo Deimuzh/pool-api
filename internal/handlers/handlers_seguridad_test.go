@@ -725,3 +725,227 @@ func TestBorrarGuardavida_NoEncontrado(t *testing.T) {
 		t.Fatalf("se esperaba 404, se obtuvo %d", rec.Code)
 	}
 }
+
+// ─── INCIDENTES: ERROR ─────────────────────────────────────────────────────
+
+func TestObtenerIncidente_IDInvalido(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/incidentes/no-numero", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+func TestObtenerIncidente_NoEncontrado(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/incidentes/999", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("se esperaba 404, se obtuvo %d", rec.Code)
+	}
+}
+
+func TestCrearIncidente_JSONInvalido(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/incidentes/", bytes.NewReader([]byte("{json")))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+func TestCrearIncidente_CamposVacios(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+	body, _ := json.Marshal(models.Incidente{Tipo: "", Gravedad: "leve", GuardavidaID: 1, ClienteID: 2})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/incidentes/", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+func TestActualizarIncidente_IDInvalido(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+	body, _ := json.Marshal(models.Incidente{Tipo: "rescate", Gravedad: "alta", GuardavidaID: 1, ClienteID: 2})
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/incidentes/no-numero", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+func TestActualizarIncidente_JSONInvalido(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/incidentes/1", bytes.NewReader([]byte("{json")))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+func TestActualizarIncidente_NoEncontrado(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+	body, _ := json.Marshal(models.Incidente{Tipo: "rescate", Gravedad: "alta", GuardavidaID: 1, ClienteID: 2})
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/incidentes/999", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("se esperaba 404, se obtuvo %d", rec.Code)
+	}
+}
+
+func TestBorrarIncidente_IDInvalido(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/incidentes/no-numero", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+func TestBorrarIncidente_NoEncontrado(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/incidentes/999", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("se esperaba 404, se obtuvo %d", rec.Code)
+	}
+}
+
+// TestCrearGuardavida_NombreVacio verifica que crear un guardavida sin nombre
+// falle con 400 porque el service devuelve ErrNombreVacio.
+func TestCrearGuardavida_NombreVacio(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	body, _ := json.Marshal(models.Guardavida{Nombre: "", Turno: "mañana"})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/guardavidas/", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+// TestActualizarGuardavida_JSONInvalido verifica que actualizar con cuerpo
+// no JSON devuelva 400.
+func TestActualizarGuardavida_JSONInvalido(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/guardavidas/1", bytes.NewReader([]byte("{json")))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+// TestActualizarGuardavida_NombreVacio verifica que actualizar un guardavida
+// seteando nombre vacío falle con 400.
+func TestActualizarGuardavida_NombreVacio(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	body, _ := json.Marshal(models.Guardavida{Nombre: "", Turno: "noche"})
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/guardavidas/1", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+// ─── ACCESOS: ERROR ────────────────────────────────────────────────────────
+
+func TestCrearAcceso_JSONInvalido(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/accesos/", bytes.NewReader([]byte("{json")))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+func TestCrearAcceso_ClienteInexistente(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+	body, _ := json.Marshal(map[string]uint{"cliente_id": 999})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/accesos/", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+func TestCrearAcceso_ClienteConMembresia(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+	body, _ := json.Marshal(map[string]uint{"cliente_id": 3})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/accesos/", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestBorrarAcceso_IDInvalido(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/accesos/no-numero", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+func TestBorrarAcceso_NoEncontrado(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/accesos/999", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("se esperaba 404, se obtuvo %d", rec.Code)
+	}
+}
