@@ -231,7 +231,28 @@ func montarRouterPrueba(t *testing.T) (router chi.Router, tokenValido string) {
 		t.Fatalf("no se pudo generar el token de prueba: %v", err)
 	}
 
-	seguridadSvc := service.NewSeguridadService(&fakeSeguridadRepo{}, &fakeClienteRepo{}, &fakePagoRepo{})
+	seguridadRepo := &fakeSeguridadRepo{
+		guardavidas: []models.Guardavida{
+			{ID: 1, Nombre: "Carlos Mendoza", Turno: "mañana"},
+		},
+		incidentes: []models.Incidente{
+			{ID: 1, Tipo: "lesion", Gravedad: "leve", GuardavidaID: 1, ClienteID: 2},
+		},
+		accesos: []models.AccesoCliente{
+			{ID: 1, ClienteID: 2, Autorizado: true},
+		},
+		siguienteID: 1,
+	}
+	clientesRepo := &fakeClienteRepo{
+		clientes: map[uint]models.Cliente{
+			2: {ID: 2, Nombre: "Luis Pino", Membresia: "ninguna"},
+			3: {ID: 3, Nombre: "Ana Reyes", Membresia: "mensual"},
+		},
+	}
+	pagosRepo := &fakePagoRepo{tienePago: true}
+
+	seguridadSvc := service.NewSeguridadService(seguridadRepo, clientesRepo, pagosRepo)
+
 	srv := NewServer(seguridadSvc, nil, nil, authSvc)
 
 	r := chi.NewRouter()
@@ -244,6 +265,14 @@ func montarRouterPrueba(t *testing.T) (router chi.Router, tokenValido string) {
 				r.Get("/{id}", srv.ObtenerGuardavida)
 				r.Put("/{id}", srv.ActualizarGuardavida)
 				r.Delete("/{id}", srv.BorrarGuardavida)
+			})
+
+			r.Route("/incidentes", func(r chi.Router) {
+				r.Get("/", srv.ListarIncidentes)
+				r.Get("/{id}", srv.ObtenerIncidente)
+				r.Post("/", srv.CrearIncidente)
+				r.Put("/{id}", srv.ActualizarIncidente)
+				r.Delete("/{id}", srv.BorrarIncidente)
 			})
 
 			r.Route("/accesos", func(r chi.Router) {
@@ -312,8 +341,8 @@ func TestCrearGuardavida_ConToken_CreaYPersisteEnFake(t *testing.T) {
 	if err := json.Unmarshal(rec2.Body.Bytes(), &lista); err != nil {
 		t.Fatalf("no se pudo decodificar la lista: %v", err)
 	}
-	if len(lista) != 1 {
-		t.Fatalf("se esperaba 1 guardavida en la lista, se obtuvieron %d", len(lista))
+	if len(lista) != 2 {
+		t.Fatalf("se esperaban 2 guardavidas en la lista, se obtuvieron %d", len(lista))
 	}
 }
 
@@ -321,13 +350,6 @@ func TestCrearGuardavida_ConToken_CreaYPersisteEnFake(t *testing.T) {
 // un guardavida existente cuando la petición tiene JWT válido.
 func TestObtenerGuardavida_ConToken_OK(t *testing.T) {
 	router, token := montarRouterPrueba(t)
-
-	body, _ := json.Marshal(models.Guardavida{Nombre: "Sofía Loor", Turno: "mañana"})
-	reqCrear := httptest.NewRequest(http.MethodPost, "/api/v1/guardavidas/", bytes.NewReader(body))
-	reqCrear.Header.Set("Authorization", "Bearer "+token)
-	reqCrear.Header.Set("Content-Type", "application/json")
-	recCrear := httptest.NewRecorder()
-	router.ServeHTTP(recCrear, reqCrear)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/guardavidas/1", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -342,7 +364,7 @@ func TestObtenerGuardavida_ConToken_OK(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &guardavida); err != nil {
 		t.Fatalf("no se pudo decodificar la respuesta: %v", err)
 	}
-	if guardavida.Nombre != "Sofía Loor" {
+	if guardavida.Nombre != "Carlos Mendoza" {
 		t.Fatalf("nombre inesperado: %s", guardavida.Nombre)
 	}
 }
@@ -352,14 +374,7 @@ func TestObtenerGuardavida_ConToken_OK(t *testing.T) {
 func TestActualizarGuardavida_ConToken_OK(t *testing.T) {
 	router, token := montarRouterPrueba(t)
 
-	bodyCrear, _ := json.Marshal(models.Guardavida{Nombre: "Sofía Loor", Turno: "mañana"})
-	reqCrear := httptest.NewRequest(http.MethodPost, "/api/v1/guardavidas/", bytes.NewReader(bodyCrear))
-	reqCrear.Header.Set("Authorization", "Bearer "+token)
-	reqCrear.Header.Set("Content-Type", "application/json")
-	recCrear := httptest.NewRecorder()
-	router.ServeHTTP(recCrear, reqCrear)
-
-	bodyActualizar, _ := json.Marshal(models.Guardavida{Nombre: "Sofía Actualizada", Turno: "noche"})
+	bodyActualizar, _ := json.Marshal(models.Guardavida{Nombre: "Carlos Actualizado", Turno: "noche"})
 	req := httptest.NewRequest(http.MethodPut, "/api/v1/guardavidas/1", bytes.NewReader(bodyActualizar))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
@@ -375,7 +390,7 @@ func TestActualizarGuardavida_ConToken_OK(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &guardavida); err != nil {
 		t.Fatalf("no se pudo decodificar la respuesta: %v", err)
 	}
-	if guardavida.Nombre != "Sofía Actualizada" || guardavida.Turno != "noche" {
+	if guardavida.Nombre != "Carlos Actualizado" || guardavida.Turno != "noche" {
 		t.Fatalf("guardavida inesperado: %+v", guardavida)
 	}
 }
@@ -385,13 +400,6 @@ func TestActualizarGuardavida_ConToken_OK(t *testing.T) {
 func TestBorrarGuardavida_ConToken_OK(t *testing.T) {
 	router, token := montarRouterPrueba(t)
 
-	bodyCrear, _ := json.Marshal(models.Guardavida{Nombre: "Sofía Loor", Turno: "mañana"})
-	reqCrear := httptest.NewRequest(http.MethodPost, "/api/v1/guardavidas/", bytes.NewReader(bodyCrear))
-	reqCrear.Header.Set("Authorization", "Bearer "+token)
-	reqCrear.Header.Set("Content-Type", "application/json")
-	recCrear := httptest.NewRecorder()
-	router.ServeHTTP(recCrear, reqCrear)
-
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/guardavidas/1", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 	rec := httptest.NewRecorder()
@@ -400,5 +408,320 @@ func TestBorrarGuardavida_ConToken_OK(t *testing.T) {
 
 	if rec.Code != http.StatusNoContent {
 		t.Fatalf("se esperaba 204, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+// TestListarAccesos_ConToken_OK verifica que el handler devuelva la lista
+// de accesos enriquecida cuando la petición tiene JWT válido.
+func TestListarAccesos_ConToken_OK(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/accesos/", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("se esperaba 200, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var accesos []service.AccesoConNombre
+	if err := json.Unmarshal(rec.Body.Bytes(), &accesos); err != nil {
+		t.Fatalf("no se pudo decodificar la respuesta: %v", err)
+	}
+	if len(accesos) == 0 {
+		t.Fatal("se esperaba al menos un acceso")
+	}
+	if accesos[0].NombreCliente != "Luis Pino" {
+		t.Fatalf("nombre de cliente inesperado: %s", accesos[0].NombreCliente)
+	}
+}
+
+// TestCrearAcceso_ConToken_OK verifica que el handler permita crear un acceso
+// para un cliente válido con pago registrado.
+func TestCrearAcceso_ConToken_OK(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	body, _ := json.Marshal(map[string]uint{"cliente_id": 2})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/accesos/", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("se esperaba 201, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var acceso service.AccesoConNombre
+	if err := json.Unmarshal(rec.Body.Bytes(), &acceso); err != nil {
+		t.Fatalf("no se pudo decodificar la respuesta: %v", err)
+	}
+	if acceso.ClienteID != 2 || !acceso.Autorizado {
+		t.Fatalf("acceso inesperado: %+v", acceso)
+	}
+}
+
+// TestBorrarAcceso_ConToken_OK verifica que el handler permita eliminar
+// un acceso existente y responda 204.
+func TestBorrarAcceso_ConToken_OK(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/accesos/1", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("se esperaba 204, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+// TestListarIncidentes_ConToken_OK verifica que el handler devuelva incidentes
+// enriquecidos con nombres de guardavida y cliente.
+func TestListarIncidentes_ConToken_OK(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/incidentes/", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("se esperaba 200, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var incidentes []service.IncidenteConNombre
+	if err := json.Unmarshal(rec.Body.Bytes(), &incidentes); err != nil {
+		t.Fatalf("no se pudo decodificar la respuesta: %v", err)
+	}
+	if len(incidentes) == 0 {
+		t.Fatal("se esperaba al menos un incidente")
+	}
+	if incidentes[0].NombreGuardavida != "Carlos Mendoza" {
+		t.Fatalf("guardavida inesperado: %s", incidentes[0].NombreGuardavida)
+	}
+}
+
+// TestObtenerIncidente_ConToken_OK verifica que el handler devuelva un incidente
+// existente por ID cuando la petición tiene JWT válido.
+func TestObtenerIncidente_ConToken_OK(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/incidentes/1", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("se esperaba 200, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var incidente service.IncidenteConNombre
+	if err := json.Unmarshal(rec.Body.Bytes(), &incidente); err != nil {
+		t.Fatalf("no se pudo decodificar la respuesta: %v", err)
+	}
+	if incidente.ID != 1 {
+		t.Fatalf("id inesperado: %d", incidente.ID)
+	}
+}
+
+// TestCrearIncidente_ConToken_OK verifica que el handler permita crear un
+// incidente válido asociado a guardavida y cliente existentes.
+func TestCrearIncidente_ConToken_OK(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	body, _ := json.Marshal(models.Incidente{
+		Tipo:         "rescate",
+		Gravedad:     "media",
+		GuardavidaID: 1,
+		ClienteID:    2,
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/incidentes/", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("se esperaba 201, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var incidente service.IncidenteConNombre
+	if err := json.Unmarshal(rec.Body.Bytes(), &incidente); err != nil {
+		t.Fatalf("no se pudo decodificar la respuesta: %v", err)
+	}
+	if incidente.Tipo != "rescate" {
+		t.Fatalf("tipo inesperado: %s", incidente.Tipo)
+	}
+}
+
+// TestActualizarIncidente_ConToken_OK verifica que el handler permita actualizar
+// un incidente existente.
+func TestActualizarIncidente_ConToken_OK(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	body, _ := json.Marshal(models.Incidente{
+		Tipo:         "rescate",
+		Gravedad:     "alta",
+		GuardavidaID: 1,
+		ClienteID:    2,
+	})
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/incidentes/1", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("se esperaba 200, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var incidente service.IncidenteConNombre
+	if err := json.Unmarshal(rec.Body.Bytes(), &incidente); err != nil {
+		t.Fatalf("no se pudo decodificar la respuesta: %v", err)
+	}
+	if incidente.Gravedad != "alta" {
+		t.Fatalf("gravedad inesperada: %s", incidente.Gravedad)
+	}
+}
+
+// TestBorrarIncidente_ConToken_OK verifica que el handler permita eliminar
+// un incidente existente y responda 204.
+func TestBorrarIncidente_ConToken_OK(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/incidentes/1", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("se esperaba 204, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+// TestObtenerGuardavida_IDInvalido verifica que el handler responda 400
+// cuando el parámetro id no es numérico.
+func TestObtenerGuardavida_IDInvalido(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/guardavidas/no-numero", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+// TestObtenerGuardavida_NoEncontrado verifica que el handler responda 404
+// cuando el guardavida solicitado no existe.
+func TestObtenerGuardavida_NoEncontrado(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/guardavidas/999", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("se esperaba 404, se obtuvo %d", rec.Code)
+	}
+}
+
+// TestCrearGuardavida_JSONInvalido verifica que el handler responda 400
+// cuando el cuerpo de la petición no es JSON válido.
+func TestCrearGuardavida_JSONInvalido(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/guardavidas/", bytes.NewReader([]byte("{json")))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+// TestActualizarGuardavida_IDInvalido verifica que actualizar con id no numérico
+// devuelva 400 antes de llegar al service.
+func TestActualizarGuardavida_IDInvalido(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	body, _ := json.Marshal(models.Guardavida{Nombre: "Carlos", Turno: "noche"})
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/guardavidas/no-numero", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+// TestActualizarGuardavida_NoEncontrado verifica que actualizar un guardavida
+// inexistente devuelva 404.
+func TestActualizarGuardavida_NoEncontrado(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	body, _ := json.Marshal(models.Guardavida{Nombre: "Carlos", Turno: "noche"})
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/guardavidas/999", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("se esperaba 404, se obtuvo %d", rec.Code)
+	}
+}
+
+// TestBorrarGuardavida_IDInvalido verifica que borrar con id no numérico
+// devuelva 400.
+func TestBorrarGuardavida_IDInvalido(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/guardavidas/no-numero", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+// TestBorrarGuardavida_NoEncontrado verifica que borrar un guardavida inexistente
+// devuelva 404.
+func TestBorrarGuardavida_NoEncontrado(t *testing.T) {
+	router, token := montarRouterPrueba(t)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/guardavidas/999", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("se esperaba 404, se obtuvo %d", rec.Code)
 	}
 }
