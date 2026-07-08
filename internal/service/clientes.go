@@ -1,6 +1,11 @@
 package service
 
 import (
+	"errors"
+	"strings"
+
+	"gorm.io/gorm"
+
 	"pool-api/internal/models"
 	"pool-api/internal/storage"
 )
@@ -31,7 +36,16 @@ func (s *ClientesService) CrearCliente(c models.Cliente) (models.Cliente, error)
 	if c.Membresia == "" {
 		c.Membresia = "ninguna"
 	}
-	return s.repo.CrearCliente(c), nil
+	creado, err := s.repo.CrearCliente(c)
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE") ||
+			strings.Contains(err.Error(), "SQLSTATE 23505") ||
+			errors.Is(err, gorm.ErrDuplicatedKey) {
+			return models.Cliente{}, ErrCedulaEnUso
+		}
+		return models.Cliente{}, err
+	}
+	return creado, nil
 }
 
 func (s *ClientesService) ActualizarCliente(id uint, c models.Cliente) (models.Cliente, error) {
@@ -66,18 +80,39 @@ func (s *ClientesService) CrearReserva(rv models.Reserva) (models.Reserva, error
 	if rv.ClienteID == 0 {
 		return models.Reserva{}, ErrCampoObligatorio
 	}
-	if _, ok := s.repo.BuscarClientePorID(int(rv.ClienteID)); !ok {
+	cliente, ok := s.repo.BuscarClientePorID(rv.ClienteID)
+	if !ok {
 		return models.Reserva{}, ErrClienteInvalido
+	}
+	if !clienteTieneMembresia(cliente) {
+		return models.Reserva{}, ErrClienteSinMembresia
+	}
+	if rv.Duracion != 720 && rv.Duracion != 1440 {
+		return models.Reserva{}, ErrDuracionInvalida
 	}
 	if rv.Estado == "" {
 		rv.Estado = "pendiente"
 	}
-	return s.repo.CrearReserva(rv), nil
+	creado, err := s.repo.CrearReserva(rv)
+	if err != nil {
+		return models.Reserva{}, err
+	}
+	return creado, nil
 }
 
 func (s *ClientesService) ActualizarReserva(id uint, rv models.Reserva) (models.Reserva, error) {
 	if rv.ClienteID == 0 {
 		return models.Reserva{}, ErrCampoObligatorio
+	}
+	cliente, ok := s.repo.BuscarClientePorID(rv.ClienteID)
+	if !ok {
+		return models.Reserva{}, ErrClienteInvalido
+	}
+	if !clienteTieneMembresia(cliente) {
+		return models.Reserva{}, ErrClienteSinMembresia
+	}
+	if rv.Duracion != 720 && rv.Duracion != 1440 {
+		return models.Reserva{}, ErrDuracionInvalida
 	}
 	actualizado, ok := s.repo.ActualizarReserva(id, rv)
 	if !ok {
@@ -110,15 +145,41 @@ func (s *ClientesService) CrearPago(p models.Pago) (models.Pago, error) {
 	if p.Monto <= 0 {
 		return models.Pago{}, ErrMontoInvalido
 	}
-	if _, ok := s.repo.BuscarClientePorID(int(p.ClienteID)); !ok {
+	cliente, ok := s.repo.BuscarClientePorID(p.ClienteID)
+	if !ok {
 		return models.Pago{}, ErrClienteInvalido
 	}
-	return s.repo.CrearPago(p), nil
+	if clienteTieneMembresia(cliente) {
+		return models.Pago{}, ErrClienteConMembresia
+	}
+	p.Concepto = strings.TrimSpace(strings.ToLower(p.Concepto))
+	if p.Concepto != "medio_dia" && p.Concepto != "dia" {
+		return models.Pago{}, ErrConceptoPagoInvalido
+	}
+	creado, err := s.repo.CrearPago(p)
+	if err != nil {
+		return models.Pago{}, err
+	}
+	return creado, nil
 }
 
 func (s *ClientesService) ActualizarPago(id uint, p models.Pago) (models.Pago, error) {
-	if p.ClienteID == 0 || p.Monto <= 0 {
+	if p.ClienteID == 0 {
 		return models.Pago{}, ErrCampoObligatorio
+	}
+	if p.Monto <= 0 {
+		return models.Pago{}, ErrMontoInvalido
+	}
+	cliente, ok := s.repo.BuscarClientePorID(p.ClienteID)
+	if !ok {
+		return models.Pago{}, ErrClienteInvalido
+	}
+	if clienteTieneMembresia(cliente) {
+		return models.Pago{}, ErrClienteConMembresia
+	}
+	p.Concepto = strings.TrimSpace(strings.ToLower(p.Concepto))
+	if p.Concepto != "medio_dia" && p.Concepto != "dia" {
+		return models.Pago{}, ErrConceptoPagoInvalido
 	}
 	actualizado, ok := s.repo.ActualizarPago(id, p)
 	if !ok {
@@ -132,4 +193,8 @@ func (s *ClientesService) BorrarPago(id uint) error {
 		return ErrNoEncontrado
 	}
 	return nil
+}
+
+func clienteTieneMembresia(c models.Cliente) bool {
+	return strings.TrimSpace(strings.ToLower(c.Membresia)) != "" && strings.TrimSpace(strings.ToLower(c.Membresia)) != "ninguna"
 }

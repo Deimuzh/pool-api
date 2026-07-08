@@ -26,7 +26,7 @@ type fakeSeguridadRepo struct {
 func (f *fakeSeguridadRepo) ListarGuardavidas() []models.Guardavida { return f.guardavidas }
 func (f *fakeSeguridadRepo) BuscarGuardavidaPorID(id uint) (models.Guardavida, bool) {
 	for _, g := range f.guardavidas {
-		if g.ID == uint(id) {
+		if g.ID == id {
 			return g, true
 		}
 	}
@@ -44,15 +44,7 @@ func (f *fakeSeguridadRepo) ActualizarGuardavida(id uint, datos models.Guardavid
 func (f *fakeSeguridadRepo) BorrarGuardavida(id uint) bool { return false }
 
 func (f *fakeSeguridadRepo) ListarIncidentes() []models.Incidente { return nil }
-<<<<<<< HEAD
 func (f *fakeSeguridadRepo) BuscarIncidentePorID(id uint) (models.Incidente, bool) {
-=======
-func (f *fakeSeguridadRepo) BuscarIncidentePorID(id int) (models.Incidente, bool) {
-	return models.Incidente{}, false
-}
-func (f *fakeSeguridadRepo) CrearIncidente(i models.Incidente) models.Incidente { return i }
-func (f *fakeSeguridadRepo) ActualizarIncidente(id int, datos models.Incidente) (models.Incidente, bool) {
->>>>>>> f4d782a (integrar lógica de clientes con GORM y tests automatizados)
 	return models.Incidente{}, false
 }
 func (f *fakeSeguridadRepo) CrearIncidente(i models.Incidente) models.Incidente { return i }
@@ -62,15 +54,7 @@ func (f *fakeSeguridadRepo) ActualizarIncidente(id uint, datos models.Incidente)
 func (f *fakeSeguridadRepo) BorrarIncidente(id uint) bool { return false }
 
 func (f *fakeSeguridadRepo) ListarAccesos() []models.AccesoCliente { return nil }
-<<<<<<< HEAD
 func (f *fakeSeguridadRepo) BuscarAccesoPorID(id uint) (models.AccesoCliente, bool) {
-=======
-func (f *fakeSeguridadRepo) BuscarAccesoPorID(id int) (models.AccesoCliente, bool) {
-	return models.AccesoCliente{}, false
-}
-func (f *fakeSeguridadRepo) CrearAcceso(a models.AccesoCliente) models.AccesoCliente { return a }
-func (f *fakeSeguridadRepo) ActualizarAcceso(id int, datos models.AccesoCliente) (models.AccesoCliente, bool) {
->>>>>>> f4d782a (integrar lógica de clientes con GORM y tests automatizados)
 	return models.AccesoCliente{}, false
 }
 func (f *fakeSeguridadRepo) CrearAcceso(a models.AccesoCliente) models.AccesoCliente { return a }
@@ -85,18 +69,10 @@ func (f *fakeSeguridadRepo) BorrarAcceso(id uint) bool { return false }
 type fakeClienteRepo struct{}
 
 func (f *fakeClienteRepo) ListarClientes() []models.Cliente { return nil }
-<<<<<<< HEAD
 func (f *fakeClienteRepo) BuscarClientePorID(id uint) (models.Cliente, bool) {
-=======
-func (f *fakeClienteRepo) BuscarClientePorID(id int) (models.Cliente, bool) {
 	return models.Cliente{}, false
 }
-func (f *fakeClienteRepo) CrearCliente(c models.Cliente) models.Cliente { return c }
-func (f *fakeClienteRepo) ActualizarCliente(id int, datos models.Cliente) (models.Cliente, bool) {
->>>>>>> f4d782a (integrar lógica de clientes con GORM y tests automatizados)
-	return models.Cliente{}, false
-}
-func (f *fakeClienteRepo) CrearCliente(c models.Cliente) models.Cliente { return c }
+func (f *fakeClienteRepo) CrearCliente(c models.Cliente) (models.Cliente, error) { return c, nil }
 func (f *fakeClienteRepo) ActualizarCliente(id uint, datos models.Cliente) (models.Cliente, bool) {
 	return models.Cliente{}, false
 }
@@ -106,17 +82,12 @@ type fakePagoRepo struct{}
 
 func (f *fakePagoRepo) ListarPagos() []models.Pago                  { return nil }
 func (f *fakePagoRepo) BuscarPagoPorID(id uint) (models.Pago, bool) { return models.Pago{}, false }
-func (f *fakePagoRepo) CrearPago(p models.Pago) models.Pago         { return p }
+func (f *fakePagoRepo) CrearPago(p models.Pago) (models.Pago, error) { return p, nil }
 func (f *fakePagoRepo) ActualizarPago(id uint, datos models.Pago) (models.Pago, bool) {
 	return models.Pago{}, false
 }
-<<<<<<< HEAD
 func (f *fakePagoRepo) BorrarPago(id uint) bool                     { return false }
 func (f *fakePagoRepo) ClienteTienePagoEntrada(clienteID uint) bool { return false }
-=======
-func (f *fakePagoRepo) BorrarPago(id int) bool                     { return false }
-func (f *fakePagoRepo) ClienteTienePagoEntrada(clienteID int) bool { return false }
->>>>>>> f4d782a (integrar lógica de clientes con GORM y tests automatizados)
 
 // fakeUsuarioRepo permite generar un JWT real vía AuthService.Login, igual
 // que en producción, sin tocar una base de datos.

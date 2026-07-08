@@ -6,10 +6,6 @@ import (
 	"strconv"
 
 	"pool-api/internal/models"
-<<<<<<< HEAD
-=======
-	"pool-api/internal/storage"
->>>>>>> f4d782a (integrar lógica de clientes con GORM y tests automatizados)
 
 	"github.com/go-chi/chi/v5"
 )

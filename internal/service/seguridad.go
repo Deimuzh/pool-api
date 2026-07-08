@@ -84,31 +84,51 @@ func (s *SeguridadService) ObtenerIncidente(id uint) (IncidenteConNombre, bool) 
 
 func (s *SeguridadService) enriquecerIncidente(inc models.Incidente) IncidenteConNombre {
 	nombreGuardavida := ""
-	if g, ok := s.repo.BuscarGuardavidaPorID(int(inc.GuardavidaID)); ok {
+	if g, ok := s.repo.BuscarGuardavidaPorID(inc.GuardavidaID); ok {
 		nombreGuardavida = g.Nombre
+	}
+	nombreCliente := ""
+	if inc.ClienteID != 0 {
+		if c, ok := s.clientes.BuscarClientePorID(inc.ClienteID); ok {
+			nombreCliente = c.Nombre
+		}
 	}
 	return IncidenteConNombre{
 		Incidente:        inc,
 		NombreGuardavida: nombreGuardavida,
+		NombreCliente:    nombreCliente,
 	}
 }
 
-// CrearIncidente valida que el guardavida exista, y si se indicó un cliente
-// involucrado (ClienteID != 0), valida que ese cliente también exista.
+// CrearIncidente valida que el guardavida y el cliente involucrado existan.
 func (s *SeguridadService) CrearIncidente(inc models.Incidente) (IncidenteConNombre, error) {
-	if inc.Tipo == "" || inc.Gravedad == "" || inc.GuardavidaID == 0 {
+	if inc.Tipo == "" || inc.Gravedad == "" || inc.GuardavidaID == 0 || inc.ClienteID == 0 {
 		return IncidenteConNombre{}, ErrCampoObligatorio
 	}
-	if _, ok := s.repo.BuscarGuardavidaPorID(int(inc.GuardavidaID)); !ok {
+	if _, ok := s.repo.BuscarGuardavidaPorID(inc.GuardavidaID); !ok {
 		return IncidenteConNombre{}, ErrGuardavidaInvalido
+	}
+	cliente, ok := s.clientes.BuscarClientePorID(inc.ClienteID)
+	if !ok {
+		return IncidenteConNombre{}, ErrClienteInvalido
+	}
+	if !clienteTieneMembresia(cliente) && !s.clienteTieneAccesoRegistrado(inc.ClienteID) {
+		return IncidenteConNombre{}, ErrClienteSinAcceso
 	}
 	creado := s.repo.CrearIncidente(inc)
 	return s.enriquecerIncidente(creado), nil
 }
 
 func (s *SeguridadService) ActualizarIncidente(id uint, inc models.Incidente) (IncidenteConNombre, error) {
-	if inc.Tipo == "" || inc.Gravedad == "" || inc.GuardavidaID == 0 {
+	if inc.Tipo == "" || inc.Gravedad == "" || inc.GuardavidaID == 0 || inc.ClienteID == 0 {
 		return IncidenteConNombre{}, ErrCampoObligatorio
+	}
+	cliente, ok := s.clientes.BuscarClientePorID(inc.ClienteID)
+	if !ok {
+		return IncidenteConNombre{}, ErrClienteInvalido
+	}
+	if !clienteTieneMembresia(cliente) && !s.clienteTieneAccesoRegistrado(inc.ClienteID) {
+		return IncidenteConNombre{}, ErrClienteSinAcceso
 	}
 	actualizado, ok := s.repo.ActualizarIncidente(id, inc)
 	if !ok {
@@ -145,13 +165,15 @@ func (s *SeguridadService) ListarAccesos() []AccesoConNombre {
 
 func (s *SeguridadService) enriquecerAcceso(a models.AccesoCliente) AccesoConNombre {
 	nombre := ""
-	if c, ok := s.clientes.BuscarClientePorID(int(a.ClienteID)); ok {
+	pagoAlDia := s.pagos.ClienteTienePagoEntrada(a.ClienteID)
+	if c, ok := s.clientes.BuscarClientePorID(a.ClienteID); ok {
 		nombre = c.Nombre
+		pagoAlDia = pagoAlDia || clienteTieneMembresia(c)
 	}
 	return AccesoConNombre{
 		AccesoCliente: a,
 		NombreCliente: nombre,
-		PagoAlDia:     s.pagos.ClienteTienePagoEntrada(int(a.ClienteID)),
+		PagoAlDia:     pagoAlDia,
 	}
 }
 
@@ -166,15 +188,14 @@ func (s *SeguridadService) CrearAcceso(clienteID uint) (AccesoConNombre, error) 
 	if !ok {
 		return AccesoConNombre{}, ErrClienteInvalido
 	}
-
-	acc := models.AccesoCliente{ClienteID: uint(clienteID)}
-	if s.pagos.ClienteTienePagoEntrada(clienteID) {
-		acc.Autorizado = true
-		acc.Motivo = ""
-	} else {
-		acc.Autorizado = false
-		acc.Motivo = "Sin pago de entrada registrado"
+	if clienteTieneMembresia(cliente) {
+		return AccesoConNombre{}, ErrClienteConMembresia
 	}
+	if !s.pagos.ClienteTienePagoEntrada(clienteID) {
+		return AccesoConNombre{}, ErrClienteSinAcceso
+	}
+
+	acc := models.AccesoCliente{ClienteID: clienteID, Autorizado: true}
 
 	creado := s.repo.CrearAcceso(acc)
 	return AccesoConNombre{
@@ -189,4 +210,13 @@ func (s *SeguridadService) BorrarAcceso(id uint) error {
 		return ErrNoEncontrado
 	}
 	return nil
+}
+
+func (s *SeguridadService) clienteTieneAccesoRegistrado(clienteID uint) bool {
+	for _, acceso := range s.repo.ListarAccesos() {
+		if acceso.ClienteID == clienteID && acceso.Autorizado {
+			return true
+		}
+	}
+	return false
 }

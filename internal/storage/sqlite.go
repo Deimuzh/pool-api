@@ -51,7 +51,7 @@ func (a *AlmacenSQLite) ActualizarGuardavida(id uint, datos models.Guardavida) (
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.Guardavida{}, false
 	}
-	datos.ID = uint(id)
+	datos.ID = id
 	datos.CreadoEn = existente.CreadoEn
 	a.db.Save(&datos)
 	return datos, true
@@ -91,7 +91,7 @@ func (a *AlmacenSQLite) ActualizarIncidente(id uint, datos models.Incidente) (mo
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.Incidente{}, false
 	}
-	datos.ID = uint(id)
+	datos.ID = id
 	datos.FechaHora = existente.FechaHora
 	a.db.Save(&datos)
 	return datos, true
@@ -131,7 +131,7 @@ func (a *AlmacenSQLite) ActualizarAcceso(id uint, datos models.AccesoCliente) (m
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.AccesoCliente{}, false
 	}
-	datos.ID = uint(id)
+	datos.ID = id
 	datos.FechaHora = existente.FechaHora
 	a.db.Save(&datos)
 	return datos, true
@@ -160,9 +160,11 @@ func (a *AlmacenSQLite) BuscarEquipoPorID(id uint) (models.Equipo, bool) {
 	return e, true
 }
 
-func (a *AlmacenSQLite) CrearEquipo(e models.Equipo) models.Equipo {
-	a.db.Create(&e)
-	return e
+func (a *AlmacenSQLite) CrearEquipo(e models.Equipo) (models.Equipo, error) {
+	if err := a.db.Create(&e).Error; err != nil {
+		return models.Equipo{}, err
+	}
+	return e, nil
 }
 
 func (a *AlmacenSQLite) ActualizarEquipo(id uint, datos models.Equipo) (models.Equipo, bool) {
@@ -170,7 +172,7 @@ func (a *AlmacenSQLite) ActualizarEquipo(id uint, datos models.Equipo) (models.E
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.Equipo{}, false
 	}
-	datos.ID = uint(id)
+	datos.ID = id
 	a.db.Save(&datos)
 	return datos, true
 }
@@ -198,10 +200,12 @@ func (a *AlmacenSQLite) BuscarRegistroPorID(id uint) (models.RegistroMantenimien
 	return rm, true
 }
 
-func (a *AlmacenSQLite) CrearRegistro(rm models.RegistroMantenimiento) models.RegistroMantenimiento {
+func (a *AlmacenSQLite) CrearRegistro(rm models.RegistroMantenimiento) (models.RegistroMantenimiento, error) {
 	rm.FechaHora = time.Now()
-	a.db.Create(&rm)
-	return rm
+	if err := a.db.Create(&rm).Error; err != nil {
+		return models.RegistroMantenimiento{}, err
+	}
+	return rm, nil
 }
 
 func (a *AlmacenSQLite) ActualizarRegistro(id uint, datos models.RegistroMantenimiento) (models.RegistroMantenimiento, bool) {
@@ -209,7 +213,7 @@ func (a *AlmacenSQLite) ActualizarRegistro(id uint, datos models.RegistroManteni
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.RegistroMantenimiento{}, false
 	}
-	datos.ID = uint(id)
+	datos.ID = id
 	datos.FechaHora = existente.FechaHora
 	a.db.Save(&datos)
 	return datos, true
@@ -238,9 +242,11 @@ func (a *AlmacenSQLite) BuscarQuimicoPorID(id uint) (models.ProductoQuimico, boo
 	return q, true
 }
 
-func (a *AlmacenSQLite) CrearQuimico(q models.ProductoQuimico) models.ProductoQuimico {
-	a.db.Create(&q)
-	return q
+func (a *AlmacenSQLite) CrearQuimico(q models.ProductoQuimico) (models.ProductoQuimico, error) {
+	if err := a.db.Create(&q).Error; err != nil {
+		return models.ProductoQuimico{}, err
+	}
+	return q, nil
 }
 
 func (a *AlmacenSQLite) ActualizarQuimico(id uint, datos models.ProductoQuimico) (models.ProductoQuimico, bool) {
@@ -248,7 +254,7 @@ func (a *AlmacenSQLite) ActualizarQuimico(id uint, datos models.ProductoQuimico)
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.ProductoQuimico{}, false
 	}
-	datos.ID = uint(id)
+	datos.ID = id
 	a.db.Save(&datos)
 	return datos, true
 }
@@ -276,10 +282,12 @@ func (a *AlmacenSQLite) BuscarClientePorID(id uint) (models.Cliente, bool) {
 	return c, true
 }
 
-func (a *AlmacenSQLite) CrearCliente(c models.Cliente) models.Cliente {
+func (a *AlmacenSQLite) CrearCliente(c models.Cliente) (models.Cliente, error) {
 	c.FechaRegistro = time.Now()
-	a.db.Create(&c)
-	return c
+	if err := a.db.Create(&c).Error; err != nil {
+		return models.Cliente{}, err
+	}
+	return c, nil
 }
 
 func (a *AlmacenSQLite) ActualizarCliente(id uint, datos models.Cliente) (models.Cliente, bool) {
@@ -287,7 +295,7 @@ func (a *AlmacenSQLite) ActualizarCliente(id uint, datos models.Cliente) (models
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.Cliente{}, false
 	}
-	datos.ID = uint(id)
+	datos.ID = id
 	datos.FechaRegistro = existente.FechaRegistro
 	a.db.Save(&datos)
 	return datos, true
@@ -316,10 +324,12 @@ func (a *AlmacenSQLite) BuscarReservaPorID(id uint) (models.Reserva, bool) {
 	return rv, true
 }
 
-func (a *AlmacenSQLite) CrearReserva(rv models.Reserva) models.Reserva {
+func (a *AlmacenSQLite) CrearReserva(rv models.Reserva) (models.Reserva, error) {
 	rv.FechaHora = time.Now()
-	a.db.Create(&rv)
-	return rv
+	if err := a.db.Create(&rv).Error; err != nil {
+		return models.Reserva{}, err
+	}
+	return rv, nil
 }
 
 func (a *AlmacenSQLite) ActualizarReserva(id uint, datos models.Reserva) (models.Reserva, bool) {
@@ -327,7 +337,7 @@ func (a *AlmacenSQLite) ActualizarReserva(id uint, datos models.Reserva) (models
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.Reserva{}, false
 	}
-	datos.ID = uint(id)
+	datos.ID = id
 	datos.FechaHora = existente.FechaHora
 	a.db.Save(&datos)
 	return datos, true
@@ -356,10 +366,12 @@ func (a *AlmacenSQLite) BuscarPagoPorID(id uint) (models.Pago, bool) {
 	return p, true
 }
 
-func (a *AlmacenSQLite) CrearPago(p models.Pago) models.Pago {
+func (a *AlmacenSQLite) CrearPago(p models.Pago) (models.Pago, error) {
 	p.FechaHora = time.Now()
-	a.db.Create(&p)
-	return p
+	if err := a.db.Create(&p).Error; err != nil {
+		return models.Pago{}, err
+	}
+	return p, nil
 }
 
 func (a *AlmacenSQLite) ActualizarPago(id uint, datos models.Pago) (models.Pago, bool) {
@@ -367,7 +379,7 @@ func (a *AlmacenSQLite) ActualizarPago(id uint, datos models.Pago) (models.Pago,
 	if err := a.db.First(&existente, id).Error; err != nil {
 		return models.Pago{}, false
 	}
-	datos.ID = uint(id)
+	datos.ID = id
 	datos.FechaHora = existente.FechaHora
 	a.db.Save(&datos)
 	return datos, true
@@ -379,12 +391,12 @@ func (a *AlmacenSQLite) BorrarPago(id uint) bool {
 }
 
 // ClienteTienePagoEntrada verifica si el cliente tiene al menos un pago
-// con concepto "entrada" registrado. Lo usa el service de Seguridad para
+// de medio día o día completo registrado. Lo usa el service de Seguridad para
 // decidir si autoriza el acceso, sin acoplarse a la tabla Pago.
 func (a *AlmacenSQLite) ClienteTienePagoEntrada(clienteID uint) bool {
 	var count int64
 	a.db.Model(&models.Pago{}).
-		Where("cliente_id = ? AND concepto = ?", clienteID, "entrada").
+		Where("cliente_id = ? AND concepto IN ?", clienteID, []string{"medio_dia", "dia"}).
 		Count(&count)
 	return count > 0
 }
@@ -484,7 +496,7 @@ func (a *AlmacenSQLite) SembrarSiVacio() {
 	a.db.Create(&quimicos)
 
 	pagos := []models.Pago{
-		{ID: 1, ClienteID: 1, Monto: 5.0, Concepto: "entrada", Metodo: "efectivo"},
+		{ID: 1, ClienteID: 2, Monto: 3.0, Concepto: "medio_dia", Metodo: "efectivo"},
 	}
 	a.db.Create(&pagos)
 }

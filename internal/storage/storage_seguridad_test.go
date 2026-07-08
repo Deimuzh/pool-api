@@ -47,7 +47,7 @@ func TestAlmacenSQLite_CrearYListarGuardavida(t *testing.T) {
 	}
 
 	// Buscar por ID debe reflejar lo creado.
-	encontrado, ok := almacen.BuscarGuardavidaPorID(int(creado.ID))
+	encontrado, ok := almacen.BuscarGuardavidaPorID(creado.ID)
 	if !ok {
 		t.Fatal("se esperaba encontrar el guardavida recién creado")
 	}
@@ -74,5 +74,63 @@ func TestAlmacenSQLite_BuscarGuardavidaInexistente(t *testing.T) {
 	_, ok := almacen.BuscarGuardavidaPorID(999)
 	if ok {
 		t.Error("no se esperaba encontrar un guardavida con ID 999")
+	}
+}
+
+// TestAlmacenSQLite_CrearYListarAcceso prueba que el repositorio real pueda
+// guardar y listar accesos usando GORM con SQLite en memoria.
+func TestAlmacenSQLite_CrearYListarAcceso(t *testing.T) {
+	db := abrirDBPrueba(t)
+	if err := db.AutoMigrate(&models.AccesoCliente{}); err != nil {
+		t.Fatalf("falló AutoMigrate de AccesoCliente: %v", err)
+	}
+
+	almacen := NuevoAlmacenSQLite(db)
+
+	creado := almacen.CrearAcceso(models.AccesoCliente{
+		ClienteID:  2,
+		Autorizado: true,
+	})
+
+	if creado.ID == 0 {
+		t.Fatal("se esperaba que GORM asignara un ID al acceso")
+	}
+
+	lista := almacen.ListarAccesos()
+	if len(lista) != 1 {
+		t.Fatalf("se esperaba 1 acceso, se obtuvieron %d", len(lista))
+	}
+
+	if lista[0].ClienteID != 2 {
+		t.Errorf("cliente_id inesperado: %d", lista[0].ClienteID)
+	}
+
+	if !lista[0].Autorizado {
+		t.Error("se esperaba que el acceso esté autorizado")
+	}
+}
+
+// TestAlmacenSQLite_BuscarAccesoPorID prueba que un acceso recién creado pueda
+// recuperarse por su ID desde el repositorio real.
+func TestAlmacenSQLite_BuscarAccesoPorID(t *testing.T) {
+	db := abrirDBPrueba(t)
+	if err := db.AutoMigrate(&models.AccesoCliente{}); err != nil {
+		t.Fatalf("falló AutoMigrate de AccesoCliente: %v", err)
+	}
+
+	almacen := NuevoAlmacenSQLite(db)
+
+	creado := almacen.CrearAcceso(models.AccesoCliente{
+		ClienteID:  3,
+		Autorizado: true,
+	})
+
+	encontrado, ok := almacen.BuscarAccesoPorID(creado.ID)
+	if !ok {
+		t.Fatal("se esperaba encontrar el acceso recién creado")
+	}
+
+	if encontrado.ClienteID != 3 {
+		t.Errorf("cliente_id inesperado: %d", encontrado.ClienteID)
 	}
 }
