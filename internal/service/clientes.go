@@ -100,6 +100,16 @@ func (s *ClientesService) ActualizarCliente(id uint, c models.Cliente) (models.C
 }
 
 func (s *ClientesService) BorrarCliente(id uint) error {
+	for _, rv := range s.repo.ListarReservas() {
+		if rv.ClienteID == id {
+			return ErrClienteConReservas
+		}
+	}
+	for _, p := range s.repo.ListarPagos() {
+		if p.ClienteID == id {
+			return ErrClienteConPagos
+		}
+	}
 	if !s.repo.BorrarCliente(id) {
 		return ErrNoEncontrado
 	}
