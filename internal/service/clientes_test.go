@@ -13,10 +13,12 @@ type clientesModuloMock struct {
 	reservas map[uint]models.Reserva
 	pagos    map[uint]models.Pago
 
-	crearClienteLlamado bool
-	crearReservaLlamado bool
-	crearPagoLlamado    bool
-	errorCrearCliente   error
+	crearClienteLlamado  bool
+	crearReservaLlamado  bool
+	crearPagoLlamado     bool
+	errorCrearCliente    error
+	errorCrearReserva    error
+	errorCrearPago       error
 }
 
 var _ storage.ClientesModulo = (*clientesModuloMock)(nil)
@@ -83,6 +85,9 @@ func (m *clientesModuloMock) BuscarReservaPorID(id uint) (models.Reserva, bool) 
 
 func (m *clientesModuloMock) CrearReserva(r models.Reserva) (models.Reserva, error) {
 	m.crearReservaLlamado = true
+	if m.errorCrearReserva != nil {
+		return models.Reserva{}, m.errorCrearReserva
+	}
 	r.ID = uint(len(m.reservas)) + 1
 	m.reservas[r.ID] = r
 	return r, nil
@@ -119,6 +124,9 @@ func (m *clientesModuloMock) BuscarPagoPorID(id uint) (models.Pago, bool) {
 
 func (m *clientesModuloMock) CrearPago(p models.Pago) (models.Pago, error) {
 	m.crearPagoLlamado = true
+	if m.errorCrearPago != nil {
+		return models.Pago{}, m.errorCrearPago
+	}
 	p.ID = uint(len(m.pagos)) + 1
 	m.pagos[p.ID] = p
 	return p, nil
@@ -682,5 +690,172 @@ func TestClientesService_BorrarPago_NoEncontrado(t *testing.T) {
 	err := svc.BorrarPago(999)
 	if err != ErrNoEncontrado {
 		t.Fatalf("se esperaba ErrNoEncontrado, se obtuvo %v", err)
+	}
+}
+
+func TestClientesService_ListarReservas_ConDatos(t *testing.T) {
+	repo := newClientesModuloMock()
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Ana Reyes", Membresia: "mensual"}
+	repo.reservas[1] = models.Reserva{ID: 1, ClienteID: 1, Duracion: 720}
+	svc := NewClientesService(repo)
+
+	lista := svc.ListarReservas()
+	if len(lista) != 1 {
+		t.Fatalf("se esperaba 1 reserva, se obtuvieron %d", len(lista))
+	}
+}
+
+func TestClientesService_ListarPagos_ConDatos(t *testing.T) {
+	repo := newClientesModuloMock()
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Luis Pino", Membresia: "ninguna"}
+	repo.pagos[1] = models.Pago{ID: 1, ClienteID: 1, Monto: 5, Concepto: "dia", Metodo: "efectivo"}
+	svc := NewClientesService(repo)
+
+	lista := svc.ListarPagos()
+	if len(lista) != 1 {
+		t.Fatalf("se esperaba 1 pago, se obtuvieron %d", len(lista))
+	}
+}
+
+func TestClientesService_CrearReserva_ErrorRepo(t *testing.T) {
+	repo := newClientesModuloMock()
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Ana Reyes", Membresia: "mensual"}
+	repo.errorCrearReserva = errors.New("error interno")
+	svc := NewClientesService(repo)
+
+	_, err := svc.CrearReserva(models.Reserva{ClienteID: 1, Duracion: 720})
+	if err == nil || err.Error() != "error interno" {
+		t.Fatalf("se esperaba error del repo, se obtuvo %v", err)
+	}
+}
+
+func TestClientesService_CrearPago_ClienteInvalido(t *testing.T) {
+	repo := newClientesModuloMock()
+	svc := NewClientesService(repo)
+
+	_, err := svc.CrearPago(models.Pago{ClienteID: 999, Monto: 5, Concepto: "dia", Metodo: "efectivo"})
+	if err != ErrClienteInvalido {
+		t.Fatalf("se esperaba ErrClienteInvalido, se obtuvo %v", err)
+	}
+}
+
+func TestClientesService_CrearPago_ErrorRepo(t *testing.T) {
+	repo := newClientesModuloMock()
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Luis Pino", Membresia: "ninguna"}
+	repo.errorCrearPago = errors.New("error interno")
+	svc := NewClientesService(repo)
+
+	_, err := svc.CrearPago(models.Pago{ClienteID: 1, Monto: 5, Concepto: "dia", Metodo: "efectivo"})
+	if err == nil || err.Error() != "error interno" {
+		t.Fatalf("se esperaba error del repo, se obtuvo %v", err)
+	}
+}
+
+func TestClientesService_ActualizarReserva_ClienteInvalido(t *testing.T) {
+	repo := newClientesModuloMock()
+	svc := NewClientesService(repo)
+
+	_, err := svc.ActualizarReserva(1, models.Reserva{ClienteID: 999, Duracion: 720})
+	if err != ErrClienteInvalido {
+		t.Fatalf("se esperaba ErrClienteInvalido, se obtuvo %v", err)
+	}
+}
+
+func TestClientesService_ActualizarReserva_SinMembresia(t *testing.T) {
+	repo := newClientesModuloMock()
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Luis Pino", Membresia: "ninguna"}
+	svc := NewClientesService(repo)
+
+	_, err := svc.ActualizarReserva(1, models.Reserva{ClienteID: 1, Duracion: 720})
+	if err != ErrClienteSinMembresia {
+		t.Fatalf("se esperaba ErrClienteSinMembresia, se obtuvo %v", err)
+	}
+}
+
+func TestClientesService_ActualizarPago_ClienteInvalido(t *testing.T) {
+	repo := newClientesModuloMock()
+	svc := NewClientesService(repo)
+
+	_, err := svc.ActualizarPago(1, models.Pago{ClienteID: 999, Monto: 5, Concepto: "dia", Metodo: "efectivo"})
+	if err != ErrClienteInvalido {
+		t.Fatalf("se esperaba ErrClienteInvalido, se obtuvo %v", err)
+	}
+}
+
+func TestClientesService_ActualizarPago_ClienteConMembresia(t *testing.T) {
+	repo := newClientesModuloMock()
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Ana Reyes", Membresia: "mensual"}
+	svc := NewClientesService(repo)
+
+	_, err := svc.ActualizarPago(1, models.Pago{ClienteID: 1, Monto: 5, Concepto: "dia", Metodo: "efectivo"})
+	if err != ErrClienteConMembresia {
+		t.Fatalf("se esperaba ErrClienteConMembresia, se obtuvo %v", err)
+	}
+}
+
+func TestClientesService_ActualizarPago_ConceptoInvalido(t *testing.T) {
+	repo := newClientesModuloMock()
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Luis Pino", Membresia: "ninguna"}
+	svc := NewClientesService(repo)
+
+	_, err := svc.ActualizarPago(1, models.Pago{ClienteID: 1, Monto: 5, Concepto: "invalido", Metodo: "efectivo"})
+	if err != ErrConceptoPagoInvalido {
+		t.Fatalf("se esperaba ErrConceptoPagoInvalido, se obtuvo %v", err)
+	}
+}
+
+func TestClientesService_CrearCliente_ErrorRepo(t *testing.T) {
+	repo := newClientesModuloMock()
+	repo.errorCrearCliente = errors.New("error interno")
+	svc := NewClientesService(repo)
+
+	_, err := svc.CrearCliente(models.Cliente{Nombre: "Test", Cedula: "1312345678"})
+	if err == nil || err.Error() != "error interno" {
+		t.Fatalf("se esperaba error del repo, se obtuvo %v", err)
+	}
+}
+
+func TestClientesService_ActualizarCliente_TrimEspacios(t *testing.T) {
+	repo := newClientesModuloMock()
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Ana Reyes", Cedula: "1312345678"}
+	svc := NewClientesService(repo)
+
+	actualizado, err := svc.ActualizarCliente(1, models.Cliente{Nombre: "  Ana  ", Cedula: "  1312345678  "})
+	if err != nil {
+		t.Fatalf("no se esperaba error, se obtuvo %v", err)
+	}
+	if actualizado.Nombre != "Ana" {
+		t.Fatalf("nombre inesperado: '%s'", actualizado.Nombre)
+	}
+}
+
+func TestClientesService_ActualizarCliente_NombreVacio(t *testing.T) {
+	repo := newClientesModuloMock()
+	svc := NewClientesService(repo)
+
+	_, err := svc.ActualizarCliente(1, models.Cliente{Nombre: "", Cedula: "1312345678"})
+	if err != ErrCampoObligatorio {
+		t.Fatalf("se esperaba ErrCampoObligatorio, se obtuvo %v", err)
+	}
+}
+
+func TestClientesService_ActualizarCliente_CedulaFormatoInvalido(t *testing.T) {
+	repo := newClientesModuloMock()
+	svc := NewClientesService(repo)
+
+	_, err := svc.ActualizarCliente(1, models.Cliente{Nombre: "Test", Cedula: "123"})
+	if err != ErrCedulaFormatoInvalido {
+		t.Fatalf("se esperaba ErrCedulaFormatoInvalido, se obtuvo %v", err)
+	}
+}
+
+func TestClientesService_ActualizarCliente_EmailFormatoInvalido(t *testing.T) {
+	repo := newClientesModuloMock()
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Ana Reyes", Cedula: "1312345678"}
+	svc := NewClientesService(repo)
+
+	_, err := svc.ActualizarCliente(1, models.Cliente{Nombre: "Ana", Cedula: "1312345678", Email: "invalido"})
+	if err != ErrEmailFormatoInvalido {
+		t.Fatalf("se esperaba ErrEmailFormatoInvalido, se obtuvo %v", err)
 	}
 }
