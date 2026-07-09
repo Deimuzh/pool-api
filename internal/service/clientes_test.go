@@ -252,6 +252,18 @@ func TestClientesService_ActualizarCliente_Exitoso(t *testing.T) {
 	}
 }
 
+func TestClientesService_ActualizarCliente_CedulaDuplicada(t *testing.T) {
+	repo := newClientesModuloMock()
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Luis Pino", Cedula: "1312345678"}
+	repo.clientes[2] = models.Cliente{ID: 2, Nombre: "Ana Reyes", Cedula: "1398765432"}
+	svc := NewClientesService(repo)
+
+	_, err := svc.ActualizarCliente(1, models.Cliente{Nombre: "Luis Actualizado", Cedula: "1398765432"})
+	if err != ErrCedulaEnUso {
+		t.Fatalf("se esperaba ErrCedulaEnUso al usar cedula de otro cliente, se obtuvo %v", err)
+	}
+}
+
 func TestClientesService_ActualizarCliente_NoEncontrado(t *testing.T) {
 	repo := newClientesModuloMock()
 	svc := NewClientesService(repo)
