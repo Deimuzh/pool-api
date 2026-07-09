@@ -52,7 +52,7 @@ func (s *MantenimientoService) ActualizarEquipo(id uint, e models.Equipo) (model
 
 func (s *MantenimientoService) BorrarEquipo(id uint) error {
 	if !s.repo.BorrarEquipo(id) {
-		return ErrNoEncontrado
+		return ErrNoEncontrado //recurso no encontrado
 	}
 	return nil
 }
@@ -109,8 +109,9 @@ func (s *MantenimientoService) ListarQuimicos() []models.ProductoQuimico {
 func (s *MantenimientoService) ObtenerQuimico(id uint) (models.ProductoQuimico, bool) {
 	return s.repo.BuscarQuimicoPorID(id)
 }
-
+//Contiene las validaciones y reglas de negocio antes de llamar al repositorio.
 func (s *MantenimientoService) CrearQuimico(q models.ProductoQuimico) (models.ProductoQuimico, error) {
+// Validación: nombre obligatorio
 	if q.Nombre == "" {
 		return models.ProductoQuimico{}, ErrNombreVacio
 	}

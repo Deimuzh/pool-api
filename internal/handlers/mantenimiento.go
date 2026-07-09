@@ -161,18 +161,21 @@ func (s *Server) ObtenerQuimico(w http.ResponseWriter, r *http.Request) {
 	}
 	RespondJSON(w, http.StatusOK, q)
 }
-
+//Recibe la request HTTP, parsea JSON/parámetros, llama al service y devuelve JSON.
 func (s *Server) CrearQuimico(w http.ResponseWriter, r *http.Request) {
 	var q models.ProductoQuimico
+// 1. Decodificar JSON del body
 	if err := json.NewDecoder(r.Body).Decode(&q); err != nil {
 		RespondError(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
 		return
 	}
+// 2. Llamar al service (nunca toca la BD directamente)
 	creado, err := s.Mantenimiento.CrearQuimico(q)
 	if err != nil {
 		RespondError(w, statusDeError(err), err.Error())
 		return
 	}
+// 3. Responder con el resultado
 	RespondJSON(w, http.StatusCreated, creado)
 }
 

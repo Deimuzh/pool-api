@@ -13,6 +13,7 @@ type mantenimientoRepoMock struct {
 	crearRegistro      bool
 }
 
+// Verificación en compilación de que implementa la interfaz:
 var _ storage.MantenimientoRepository = (*mantenimientoRepoMock)(nil)
 
 func newMantenimientoRepoMock() *mantenimientoRepoMock {
