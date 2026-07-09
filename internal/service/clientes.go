@@ -223,5 +223,6 @@ func (s *ClientesService) BorrarPago(id uint) error {
 }
 
 func clienteTieneMembresia(c models.Cliente) bool {
-	return strings.TrimSpace(strings.ToLower(c.Membresia)) != "" && strings.TrimSpace(strings.ToLower(c.Membresia)) != "ninguna"
+	m := strings.TrimSpace(strings.ToLower(c.Membresia))
+	return m != "" && m != "ninguna"
 }
