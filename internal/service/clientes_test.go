@@ -47,7 +47,7 @@ func (m *clientesModuloMock) CrearCliente(c models.Cliente) (models.Cliente, err
 	if m.errorCrearCliente != nil {
 		return models.Cliente{}, m.errorCrearCliente
 	}
-	c.ID = uint(len(m.clientes) + 1)
+	c.ID = uint(len(m.clientes)) + 1
 	m.clientes[c.ID] = c
 	return c, nil
 }
@@ -77,7 +77,7 @@ func (m *clientesModuloMock) BuscarReservaPorID(id uint) (models.Reserva, bool) 
 
 func (m *clientesModuloMock) CrearReserva(r models.Reserva) (models.Reserva, error) {
 	m.crearReservaLlamado = true
-	r.ID = uint(len(m.reservas) + 1)
+	r.ID = uint(len(m.reservas)) + 1
 	m.reservas[r.ID] = r
 	return r, nil
 }
@@ -107,7 +107,7 @@ func (m *clientesModuloMock) BuscarPagoPorID(id uint) (models.Pago, bool) {
 
 func (m *clientesModuloMock) CrearPago(p models.Pago) (models.Pago, error) {
 	m.crearPagoLlamado = true
-	p.ID = uint(len(m.pagos) + 1)
+	p.ID = uint(len(m.pagos)) + 1
 	m.pagos[p.ID] = p
 	return p, nil
 }
