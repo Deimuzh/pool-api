@@ -69,7 +69,13 @@ func (m *clientesModuloMock) BorrarCliente(id uint) bool {
 	return true
 }
 
-func (m *clientesModuloMock) ListarReservas() []models.Reserva { return nil }
+func (m *clientesModuloMock) ListarReservas() []models.Reserva {
+	lista := make([]models.Reserva, 0, len(m.reservas))
+	for _, r := range m.reservas {
+		lista = append(lista, r)
+	}
+	return lista
+}
 func (m *clientesModuloMock) BuscarReservaPorID(id uint) (models.Reserva, bool) {
 	r, ok := m.reservas[id]
 	return r, ok
@@ -99,7 +105,13 @@ func (m *clientesModuloMock) BorrarReserva(id uint) bool {
 	return true
 }
 
-func (m *clientesModuloMock) ListarPagos() []models.Pago { return nil }
+func (m *clientesModuloMock) ListarPagos() []models.Pago {
+	lista := make([]models.Pago, 0, len(m.pagos))
+	for _, p := range m.pagos {
+		lista = append(lista, p)
+	}
+	return lista
+}
 func (m *clientesModuloMock) BuscarPagoPorID(id uint) (models.Pago, bool) {
 	p, ok := m.pagos[id]
 	return p, ok
@@ -320,6 +332,30 @@ func TestClientesService_ActualizarCliente_NoEncontrado(t *testing.T) {
 	_, err := svc.ActualizarCliente(999, models.Cliente{Nombre: "Inexistente", Cedula: "1312345678"})
 	if err != ErrNoEncontrado {
 		t.Fatalf("se esperaba ErrNoEncontrado, se obtuvo %v", err)
+	}
+}
+
+func TestClientesService_BorrarCliente_ConReservas(t *testing.T) {
+	repo := newClientesModuloMock()
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Ana Reyes", Cedula: "1312345678"}
+	repo.reservas[1] = models.Reserva{ID: 1, ClienteID: 1, Duracion: 720}
+	svc := NewClientesService(repo)
+
+	err := svc.BorrarCliente(1)
+	if err != ErrClienteConReservas {
+		t.Fatalf("se esperaba ErrClienteConReservas, se obtuvo %v", err)
+	}
+}
+
+func TestClientesService_BorrarCliente_ConPagos(t *testing.T) {
+	repo := newClientesModuloMock()
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Luis Pino", Cedula: "1312345678"}
+	repo.pagos[1] = models.Pago{ID: 1, ClienteID: 1, Monto: 5, Concepto: "dia"}
+	svc := NewClientesService(repo)
+
+	err := svc.BorrarCliente(1)
+	if err != ErrClienteConPagos {
+		t.Fatalf("se esperaba ErrClienteConPagos, se obtuvo %v", err)
 	}
 }
 
