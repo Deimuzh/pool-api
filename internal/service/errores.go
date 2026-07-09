@@ -17,8 +17,6 @@ var (
 	ErrConceptoPagoInvalido  = errors.New("el concepto debe ser medio_dia o dia")
 	ErrMetodoPagoInvalido    = errors.New("el método debe ser efectivo o transferencia")
 	ErrDuracionInvalida      = errors.New("la duración debe ser medio día o un día")
-	ErrClienteConReservas    = errors.New("el cliente tiene reservas activas")
-	ErrClienteConPagos       = errors.New("el cliente tiene pagos registrados")
 	ErrCredencialesInvalidas = errors.New("email o contraseña incorrectos")
 	ErrEmailEnUso            = errors.New("ese email ya está registrado")
 	ErrEmailFormatoInvalido  = errors.New("formato de email inválido")

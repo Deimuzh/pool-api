@@ -102,12 +102,12 @@ func (s *ClientesService) ActualizarCliente(id uint, c models.Cliente) (models.C
 func (s *ClientesService) BorrarCliente(id uint) error {
 	for _, rv := range s.repo.ListarReservas() {
 		if rv.ClienteID == id {
-			return ErrClienteConReservas
+			s.repo.BorrarReserva(rv.ID)
 		}
 	}
 	for _, p := range s.repo.ListarPagos() {
 		if p.ClienteID == id {
-			return ErrClienteConPagos
+			s.repo.BorrarPago(p.ID)
 		}
 	}
 	if !s.repo.BorrarCliente(id) {

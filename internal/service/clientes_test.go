@@ -335,27 +335,45 @@ func TestClientesService_ActualizarCliente_NoEncontrado(t *testing.T) {
 	}
 }
 
-func TestClientesService_BorrarCliente_ConReservas(t *testing.T) {
+func TestClientesService_BorrarCliente_CascadeReservas(t *testing.T) {
 	repo := newClientesModuloMock()
 	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Ana Reyes", Cedula: "1312345678"}
 	repo.reservas[1] = models.Reserva{ID: 1, ClienteID: 1, Duracion: 720}
 	svc := NewClientesService(repo)
 
 	err := svc.BorrarCliente(1)
-	if err != ErrClienteConReservas {
-		t.Fatalf("se esperaba ErrClienteConReservas, se obtuvo %v", err)
+	if err != nil {
+		t.Fatalf("no se esperaba error, se obtuvo %v", err)
+	}
+	if _, ok := svc.ObtenerCliente(1); ok {
+		t.Fatal("el cliente deberia haberse eliminado")
+	}
+	reservas := repo.ListarReservas()
+	for _, rv := range reservas {
+		if rv.ClienteID == 1 {
+			t.Fatal("la reserva del cliente deberia haberse eliminado")
+		}
 	}
 }
 
-func TestClientesService_BorrarCliente_ConPagos(t *testing.T) {
+func TestClientesService_BorrarCliente_CascadePagos(t *testing.T) {
 	repo := newClientesModuloMock()
 	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Luis Pino", Cedula: "1312345678"}
 	repo.pagos[1] = models.Pago{ID: 1, ClienteID: 1, Monto: 5, Concepto: "dia"}
 	svc := NewClientesService(repo)
 
 	err := svc.BorrarCliente(1)
-	if err != ErrClienteConPagos {
-		t.Fatalf("se esperaba ErrClienteConPagos, se obtuvo %v", err)
+	if err != nil {
+		t.Fatalf("no se esperaba error, se obtuvo %v", err)
+	}
+	if _, ok := svc.ObtenerCliente(1); ok {
+		t.Fatal("el cliente deberia haberse eliminado")
+	}
+	pagos := repo.ListarPagos()
+	for _, p := range pagos {
+		if p.ClienteID == 1 {
+			t.Fatal("el pago del cliente deberia haberse eliminado")
+		}
 	}
 }
 
