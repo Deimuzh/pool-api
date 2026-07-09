@@ -30,6 +30,10 @@ func (s *ClientesService) ObtenerCliente(id uint) (models.Cliente, bool) {
 }
 
 func (s *ClientesService) CrearCliente(c models.Cliente) (models.Cliente, error) {
+	c.Nombre = strings.TrimSpace(c.Nombre)
+	c.Cedula = strings.TrimSpace(c.Cedula)
+	c.Email = strings.TrimSpace(c.Email)
+	c.Telefono = strings.TrimSpace(c.Telefono)
 	if c.Nombre == "" || c.Cedula == "" {
 		return models.Cliente{}, ErrCampoObligatorio
 	}
@@ -49,6 +53,10 @@ func (s *ClientesService) CrearCliente(c models.Cliente) (models.Cliente, error)
 }
 
 func (s *ClientesService) ActualizarCliente(id uint, c models.Cliente) (models.Cliente, error) {
+	c.Nombre = strings.TrimSpace(c.Nombre)
+	c.Cedula = strings.TrimSpace(c.Cedula)
+	c.Email = strings.TrimSpace(c.Email)
+	c.Telefono = strings.TrimSpace(c.Telefono)
 	if c.Nombre == "" || c.Cedula == "" {
 		return models.Cliente{}, ErrCampoObligatorio
 	}
