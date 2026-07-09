@@ -150,6 +150,19 @@ func TestClientesService_validarEmail(t *testing.T) {
 	}
 }
 
+func TestClientesService_CrearCliente_TrimEspacios(t *testing.T) {
+	repo := newClientesModuloMock()
+	svc := NewClientesService(repo)
+
+	creado, err := svc.CrearCliente(models.Cliente{Nombre: "  Maria Garcia  ", Cedula: " 1312345678 "})
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if creado.Nombre != "Maria Garcia" {
+		t.Fatalf("se esperaba nombre sin espacios, se obtuvo %q", creado.Nombre)
+	}
+}
+
 func TestClientesService_CrearCliente_CedulaFormatoInvalido(t *testing.T) {
 	repo := newClientesModuloMock()
 	svc := NewClientesService(repo)
