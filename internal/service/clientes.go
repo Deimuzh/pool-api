@@ -2,6 +2,8 @@ package service
 
 import (
 	"errors"
+	"net/mail"
+	"regexp"
 	"strings"
 
 	"gorm.io/gorm"
@@ -29,6 +31,13 @@ func (s *ClientesService) ObtenerCliente(id uint) (models.Cliente, bool) {
 	return s.repo.BuscarClientePorID(id)
 }
 
+func validarEmail(email string) bool {
+	_, err := mail.ParseAddress(email)
+	return err == nil
+}
+
+var reCedula = regexp.MustCompile(`^\d{10}$`)
+
 func (s *ClientesService) CrearCliente(c models.Cliente) (models.Cliente, error) {
 	c.Nombre = strings.TrimSpace(c.Nombre)
 	c.Cedula = strings.TrimSpace(c.Cedula)
@@ -36,6 +45,12 @@ func (s *ClientesService) CrearCliente(c models.Cliente) (models.Cliente, error)
 	c.Telefono = strings.TrimSpace(c.Telefono)
 	if c.Nombre == "" || c.Cedula == "" {
 		return models.Cliente{}, ErrCampoObligatorio
+	}
+	if !reCedula.MatchString(c.Cedula) {
+		return models.Cliente{}, ErrCedulaFormatoInvalido
+	}
+	if c.Email != "" && !validarEmail(c.Email) {
+		return models.Cliente{}, ErrEmailFormatoInvalido
 	}
 	if c.Membresia == "" {
 		c.Membresia = "ninguna"
@@ -59,6 +74,12 @@ func (s *ClientesService) ActualizarCliente(id uint, c models.Cliente) (models.C
 	c.Telefono = strings.TrimSpace(c.Telefono)
 	if c.Nombre == "" || c.Cedula == "" {
 		return models.Cliente{}, ErrCampoObligatorio
+	}
+	if !reCedula.MatchString(c.Cedula) {
+		return models.Cliente{}, ErrCedulaFormatoInvalido
+	}
+	if c.Email != "" && !validarEmail(c.Email) {
+		return models.Cliente{}, ErrEmailFormatoInvalido
 	}
 	existente, ok := s.repo.BuscarClientePorID(id)
 	if !ok {

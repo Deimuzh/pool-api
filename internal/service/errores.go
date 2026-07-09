@@ -19,5 +19,7 @@ var (
 	ErrDuracionInvalida      = errors.New("la duración debe ser medio día o un día")
 	ErrCredencialesInvalidas = errors.New("email o contraseña incorrectos")
 	ErrEmailEnUso            = errors.New("ese email ya está registrado")
+	ErrEmailFormatoInvalido  = errors.New("formato de email inválido")
+	ErrCedulaFormatoInvalido = errors.New("la cédula debe tener 10 dígitos numéricos")
 	ErrTelefonoEnUso         = errors.New("ese teléfono ya está registrado")
 )
