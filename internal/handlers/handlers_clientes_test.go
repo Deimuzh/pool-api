@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 
 	"pool-api/internal/middleware"
 	"pool-api/internal/models"
@@ -51,6 +52,11 @@ func (f *fakeClientesRepo) BuscarClientePorID(id uint) (models.Cliente, bool) {
 }
 
 func (f *fakeClientesRepo) CrearCliente(c models.Cliente) (models.Cliente, error) {
+	for _, existing := range f.clientes {
+		if existing.Cedula == c.Cedula {
+			return models.Cliente{}, gorm.ErrDuplicatedKey
+		}
+	}
 	f.siguienteID++
 	c.ID = f.siguienteID
 	f.clientes[c.ID] = c
@@ -479,5 +485,52 @@ func TestBorrarCliente_NoEncontrado(t *testing.T) {
 
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("se esperaba 404, se obtuvo %d", rec.Code)
+	}
+}
+
+// ─── ERRORES ADICIONALES ────────────────────────────────────────────────────
+
+func TestCrearCliente_CedulaDuplicada_Devuelve409(t *testing.T) {
+	router, token := montarRouterClientesPrueba(t)
+
+	body, _ := json.Marshal(models.Cliente{Nombre: "Otro", Cedula: "1312345678"})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/clientes/", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("se esperaba 409, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestCrearCliente_CedulaFormatoInvalido_Devuelve400(t *testing.T) {
+	router, token := montarRouterClientesPrueba(t)
+
+	body, _ := json.Marshal(models.Cliente{Nombre: "Test", Cedula: "123"})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/clientes/", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestActualizarCliente_NombreVacio_Devuelve400(t *testing.T) {
+	router, token := montarRouterClientesPrueba(t)
+
+	body, _ := json.Marshal(models.Cliente{Nombre: "", Cedula: "1312345678"})
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/clientes/1", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d: %s", rec.Code, rec.Body.String())
 	}
 }
