@@ -446,6 +446,28 @@ func TestClientesService_ActualizarReserva_Exitoso(t *testing.T) {
 	}
 }
 
+func TestClientesService_ActualizarReserva_DuracionInvalida(t *testing.T) {
+	repo := newClientesModuloMock()
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Luis Pino", Membresia: "mensual"}
+	svc := NewClientesService(repo)
+
+	_, err := svc.ActualizarReserva(1, models.Reserva{ClienteID: 1, Duracion: 60})
+	if err != ErrDuracionInvalida {
+		t.Fatalf("se esperaba ErrDuracionInvalida, se obtuvo %v", err)
+	}
+}
+
+func TestClientesService_ActualizarPago_MontoInvalido(t *testing.T) {
+	repo := newClientesModuloMock()
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Luis Pino", Membresia: "ninguna"}
+	svc := NewClientesService(repo)
+
+	_, err := svc.ActualizarPago(1, models.Pago{ClienteID: 1, Monto: 0, Concepto: "dia", Metodo: "efectivo"})
+	if err != ErrMontoInvalido {
+		t.Fatalf("se esperaba ErrMontoInvalido, se obtuvo %v", err)
+	}
+}
+
 func TestClientesService_ActualizarReserva_NoEncontrada(t *testing.T) {
 	repo := newClientesModuloMock()
 	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Ana Reyes", Membresia: "mensual"}
