@@ -805,3 +805,175 @@ func TestBorrarPago_ConToken_OK(t *testing.T) {
 		t.Fatalf("mensaje inesperado: %s", resp["mensaje"])
 	}
 }
+
+// ─── ERRORES RESERVA ─────────────────────────────────────────────────────────
+
+func TestCrearReserva_JSONInvalido_Devuelve400(t *testing.T) {
+	router, token := montarRouterClientesPrueba(t)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/reservas/", bytes.NewReader([]byte("{json")))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+func TestCrearReserva_SinCliente_Devuelve400(t *testing.T) {
+	router, token := montarRouterClientesPrueba(t)
+
+	body, _ := json.Marshal(models.Reserva{Duracion: 720})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/reservas/", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestActualizarReserva_JSONInvalido_Devuelve400(t *testing.T) {
+	router, token := montarRouterClientesPrueba(t)
+
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/reservas/1", bytes.NewReader([]byte("{json")))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+func TestActualizarReserva_IDInvalido_Devuelve400(t *testing.T) {
+	router, token := montarRouterClientesPrueba(t)
+
+	body, _ := json.Marshal(models.Reserva{ClienteID: 2, Duracion: 720})
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/reservas/no-numero", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+func TestBorrarReserva_IDInvalido_Devuelve400(t *testing.T) {
+	router, token := montarRouterClientesPrueba(t)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/reservas/no-numero", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+func TestBorrarReserva_NoEncontrado_Devuelve404(t *testing.T) {
+	router, token := montarRouterClientesPrueba(t)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/reservas/999", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("se esperaba 404, se obtuvo %d", rec.Code)
+	}
+}
+
+// ─── ERRORES PAGO ────────────────────────────────────────────────────────────
+
+func TestCrearPago_JSONInvalido_Devuelve400(t *testing.T) {
+	router, token := montarRouterClientesPrueba(t)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/pagos/", bytes.NewReader([]byte("{json")))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+func TestCrearPago_ClienteInvalido_Devuelve400(t *testing.T) {
+	router, token := montarRouterClientesPrueba(t)
+
+	body, _ := json.Marshal(models.Pago{ClienteID: 999, Monto: 20, Concepto: "dia", Metodo: "efectivo"})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/pagos/", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestActualizarPago_JSONInvalido_Devuelve400(t *testing.T) {
+	router, token := montarRouterClientesPrueba(t)
+
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/pagos/1", bytes.NewReader([]byte("{json")))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+func TestActualizarPago_IDInvalido_Devuelve400(t *testing.T) {
+	router, token := montarRouterClientesPrueba(t)
+
+	body, _ := json.Marshal(models.Pago{ClienteID: 1, Monto: 20, Concepto: "dia", Metodo: "efectivo"})
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/pagos/no-numero", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+func TestBorrarPago_IDInvalido_Devuelve400(t *testing.T) {
+	router, token := montarRouterClientesPrueba(t)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/pagos/no-numero", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("se esperaba 400, se obtuvo %d", rec.Code)
+	}
+}
+
+func TestBorrarPago_NoEncontrado_Devuelve404(t *testing.T) {
+	router, token := montarRouterClientesPrueba(t)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/pagos/999", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("se esperaba 404, se obtuvo %d", rec.Code)
+	}
+}
