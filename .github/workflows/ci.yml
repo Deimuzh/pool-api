@@ -31,8 +31,4 @@ jobs:
         run: go test ./... -cover
 
       - name: Compilar API
-<<<<<<< HEAD
         run: go build ./cmd/piscina-api
-=======
-        run: go build ./cmd/piscina-api
->>>>>>> origin/feat/modulo-clientes
