@@ -270,9 +270,12 @@ func TestListarClientes_ConToken_OK(t *testing.T) {
 	if len(lista) != 2 {
 		t.Fatalf("se esperaban 2 clientes, se obtuvieron %d", len(lista))
 	}
-	if lista[0].Nombre != "Ana Reyes" {
-		t.Fatalf("nombre inesperado: %s", lista[0].Nombre)
-
+	nombres := make(map[string]bool)
+	for _, c := range lista {
+		nombres[c.Nombre] = true
+	}
+	if !nombres["Ana Reyes"] || !nombres["Luis Mora"] {
+		t.Fatalf("nombres inesperados en la lista: %+v", lista)
 	}
 }
 // ─── CREAR ──────────────────────────────────────────────────────────────────
