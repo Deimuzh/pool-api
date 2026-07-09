@@ -336,6 +336,16 @@ func TestClientesService_CrearReserva_ClienteInvalido(t *testing.T) {
 	}
 }
 
+func TestClientesService_CrearReserva_ClienteIDCero(t *testing.T) {
+	repo := newClientesModuloMock()
+	svc := NewClientesService(repo)
+
+	_, err := svc.CrearReserva(models.Reserva{ClienteID: 0, Duracion: 720})
+	if err != ErrCampoObligatorio {
+		t.Fatalf("se esperaba ErrCampoObligatorio, se obtuvo %v", err)
+	}
+}
+
 func TestClientesService_ActualizarReserva_Exitoso(t *testing.T) {
 	repo := newClientesModuloMock()
 	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Ana Reyes", Membresia: "mensual"}
@@ -400,6 +410,16 @@ func TestClientesService_CrearPago_Exitoso(t *testing.T) {
 	}
 	if creado.Concepto != "dia" {
 		t.Fatalf("se esperaba concepto 'dia', se obtuvo %q", creado.Concepto)
+	}
+}
+
+func TestClientesService_CrearPago_ClienteIDCero(t *testing.T) {
+	repo := newClientesModuloMock()
+	svc := NewClientesService(repo)
+
+	_, err := svc.CrearPago(models.Pago{ClienteID: 0, Monto: 5, Concepto: "dia"})
+	if err != ErrCampoObligatorio {
+		t.Fatalf("se esperaba ErrCampoObligatorio, se obtuvo %v", err)
 	}
 }
 
