@@ -60,6 +60,17 @@ func (s *ClientesService) ActualizarCliente(id uint, c models.Cliente) (models.C
 	if c.Nombre == "" || c.Cedula == "" {
 		return models.Cliente{}, ErrCampoObligatorio
 	}
+	existente, ok := s.repo.BuscarClientePorID(id)
+	if !ok {
+		return models.Cliente{}, ErrNoEncontrado
+	}
+	if existente.Cedula != c.Cedula {
+		for _, cl := range s.repo.ListarClientes() {
+			if cl.Cedula == c.Cedula {
+				return models.Cliente{}, ErrCedulaEnUso
+			}
+		}
+	}
 	actualizado, ok := s.repo.ActualizarCliente(id, c)
 	if !ok {
 		return models.Cliente{}, ErrNoEncontrado
