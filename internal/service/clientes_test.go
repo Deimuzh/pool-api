@@ -481,6 +481,26 @@ func TestClientesService_BorrarReserva_NoEncontrada(t *testing.T) {
 	}
 }
 
+func TestClientesService_ObtenerReserva_NoEncontrada(t *testing.T) {
+	repo := newClientesModuloMock()
+	svc := NewClientesService(repo)
+
+	_, ok := svc.ObtenerReserva(999)
+	if ok {
+		t.Fatal("se esperaba ok=false para reserva inexistente")
+	}
+}
+
+func TestClientesService_ObtenerPago_NoEncontrado(t *testing.T) {
+	repo := newClientesModuloMock()
+	svc := NewClientesService(repo)
+
+	_, ok := svc.ObtenerPago(999)
+	if ok {
+		t.Fatal("se esperaba ok=false para pago inexistente")
+	}
+}
+
 func TestClientesService_CrearPago_Exitoso(t *testing.T) {
 	repo := newClientesModuloMock()
 	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Luis Pino", Membresia: "ninguna"}
@@ -556,6 +576,17 @@ func TestClientesService_ActualizarPago_Exitoso(t *testing.T) {
 	}
 	if actualizado.Metodo != "transferencia" {
 		t.Fatalf("se esperaba metodo 'transferencia', se obtuvo %q", actualizado.Metodo)
+	}
+}
+
+func TestClientesService_ActualizarPago_MetodoInvalido(t *testing.T) {
+	repo := newClientesModuloMock()
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Luis Pino", Membresia: "ninguna"}
+	svc := NewClientesService(repo)
+
+	_, err := svc.ActualizarPago(1, models.Pago{ClienteID: 1, Monto: 5, Concepto: "dia", Metodo: "tarjeta"})
+	if err != ErrMetodoPagoInvalido {
+		t.Fatalf("se esperaba ErrMetodoPagoInvalido, se obtuvo %v", err)
 	}
 }
 
