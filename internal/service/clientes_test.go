@@ -160,6 +160,22 @@ func TestClientesService_validarEmail(t *testing.T) {
 	}
 }
 
+func TestClientesService_CrearCliente_EmailValido(t *testing.T) {
+	repo := newClientesModuloMock()
+	svc := NewClientesService(repo)
+
+	creado, err := svc.CrearCliente(models.Cliente{
+		Nombre: "Maria Garcia", Cedula: "1312345678",
+		Email: "maria@example.com",
+	})
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if creado.Email != "maria@example.com" {
+		t.Fatalf("se esperaba email preservado, se obtuvo %q", creado.Email)
+	}
+}
+
 func TestClientesService_CrearCliente_TrimEspacios(t *testing.T) {
 	repo := newClientesModuloMock()
 	svc := NewClientesService(repo)
