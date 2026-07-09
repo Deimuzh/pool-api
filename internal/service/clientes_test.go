@@ -138,6 +138,38 @@ func (m *clientesModuloMock) ClienteTienePagoEntrada(clienteID uint) bool {
 	return false
 }
 
+func TestClientesService_validarEmail(t *testing.T) {
+	if !validarEmail("test@example.com") {
+		t.Fatal("se esperaba email valido")
+	}
+	if validarEmail("invalido") {
+		t.Fatal("se esperaba email invalido")
+	}
+	if validarEmail("") {
+		t.Fatal("se esperaba email vacio como invalido")
+	}
+}
+
+func TestClientesService_CrearCliente_CedulaFormatoInvalido(t *testing.T) {
+	repo := newClientesModuloMock()
+	svc := NewClientesService(repo)
+
+	_, err := svc.CrearCliente(models.Cliente{Nombre: "Test", Cedula: "123"})
+	if err != ErrCedulaFormatoInvalido {
+		t.Fatalf("se esperaba ErrCedulaFormatoInvalido, se obtuvo %v", err)
+	}
+}
+
+func TestClientesService_CrearCliente_EmailFormatoInvalido(t *testing.T) {
+	repo := newClientesModuloMock()
+	svc := NewClientesService(repo)
+
+	_, err := svc.CrearCliente(models.Cliente{Nombre: "Test", Cedula: "1312345678", Email: "invalido"})
+	if err != ErrEmailFormatoInvalido {
+		t.Fatalf("se esperaba ErrEmailFormatoInvalido, se obtuvo %v", err)
+	}
+}
+
 func TestClientesService_CrearCliente_AsignaMembresiaPorDefecto(t *testing.T) {
 	repo := newClientesModuloMock()
 	svc := NewClientesService(repo)
