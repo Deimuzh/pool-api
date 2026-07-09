@@ -866,6 +866,36 @@ func TestActualizarReserva_IDInvalido_Devuelve400(t *testing.T) {
 	}
 }
 
+func TestActualizarReserva_NoEncontrado_Devuelve404(t *testing.T) {
+	router, token := montarRouterClientesPrueba(t)
+
+	body, _ := json.Marshal(models.Reserva{ClienteID: 2, Duracion: 720, Estado: "confirmada"})
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/reservas/999", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("se esperaba 404, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestActualizarPago_NoEncontrado_Devuelve404(t *testing.T) {
+	router, token := montarRouterClientesPrueba(t)
+
+	body, _ := json.Marshal(models.Pago{ClienteID: 1, Monto: 20, Concepto: "dia", Metodo: "efectivo"})
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/pagos/999", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("se esperaba 404, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestBorrarReserva_IDInvalido_Devuelve400(t *testing.T) {
 	router, token := montarRouterClientesPrueba(t)
 
