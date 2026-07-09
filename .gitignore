@@ -1,4 +1,8 @@
 *.db
+*.out
+cover*
+service_cover
+handlers_cover
 *.py
 *.exe
 *.log
