@@ -13,12 +13,13 @@ type clientesModuloMock struct {
 	reservas map[uint]models.Reserva
 	pagos    map[uint]models.Pago
 
-	crearClienteLlamado  bool
-	crearReservaLlamado  bool
-	crearPagoLlamado     bool
-	errorCrearCliente    error
-	errorCrearReserva    error
-	errorCrearPago       error
+	crearClienteLlamado     bool
+	crearReservaLlamado     bool
+	crearPagoLlamado        bool
+	errorCrearCliente       error
+	errorCrearReserva       error
+	errorCrearPago          error
+	falloActualizarCliente  bool
 }
 
 var _ storage.ClientesModulo = (*clientesModuloMock)(nil)
@@ -56,6 +57,9 @@ func (m *clientesModuloMock) CrearCliente(c models.Cliente) (models.Cliente, err
 
 func (m *clientesModuloMock) ActualizarCliente(id uint, datos models.Cliente) (models.Cliente, bool) {
 	if _, ok := m.clientes[id]; !ok {
+		return models.Cliente{}, false
+	}
+	if m.falloActualizarCliente {
 		return models.Cliente{}, false
 	}
 	datos.ID = id
@@ -338,6 +342,18 @@ func TestClientesService_ActualizarCliente_NoEncontrado(t *testing.T) {
 	svc := NewClientesService(repo)
 
 	_, err := svc.ActualizarCliente(999, models.Cliente{Nombre: "Inexistente", Cedula: "1312345678"})
+	if err != ErrNoEncontrado {
+		t.Fatalf("se esperaba ErrNoEncontrado, se obtuvo %v", err)
+	}
+}
+
+func TestClientesService_ActualizarCliente_RepoDevuelveFalso(t *testing.T) {
+	repo := newClientesModuloMock()
+	repo.clientes[1] = models.Cliente{ID: 1, Nombre: "Ana Reyes", Cedula: "1312345678"}
+	repo.falloActualizarCliente = true
+	svc := NewClientesService(repo)
+
+	_, err := svc.ActualizarCliente(1, models.Cliente{Nombre: "Ana Reyes", Cedula: "1312345678"})
 	if err != ErrNoEncontrado {
 		t.Fatalf("se esperaba ErrNoEncontrado, se obtuvo %v", err)
 	}
