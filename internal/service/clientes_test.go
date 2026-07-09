@@ -138,6 +138,16 @@ func (m *clientesModuloMock) ClienteTienePagoEntrada(clienteID uint) bool {
 	return false
 }
 
+func TestClientesService_ListarClientes_Vacio(t *testing.T) {
+	repo := newClientesModuloMock()
+	svc := NewClientesService(repo)
+
+	lista := svc.ListarClientes()
+	if len(lista) != 0 {
+		t.Fatal("se esperaba lista vacia")
+	}
+}
+
 func TestClientesService_validarEmail(t *testing.T) {
 	if !validarEmail("test@example.com") {
 		t.Fatal("se esperaba email valido")
@@ -248,6 +258,16 @@ func TestClientesService_CrearPago_RechazaClienteConMembresia(t *testing.T) {
 	}
 	if repo.crearPagoLlamado {
 		t.Fatal("no debe crear pago de entrada para cliente con membresia")
+	}
+}
+
+func TestClientesService_ObtenerCliente_NoEncontrado(t *testing.T) {
+	repo := newClientesModuloMock()
+	svc := NewClientesService(repo)
+
+	_, ok := svc.ObtenerCliente(999)
+	if ok {
+		t.Fatal("se esperaba ok=false para cliente inexistente")
 	}
 }
 
