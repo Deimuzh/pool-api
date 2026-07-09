@@ -15,6 +15,7 @@ var (
 	ErrClienteSinAcceso      = errors.New("el cliente no tiene membresía ni pago registrado")
 	ErrEquipoInvalido        = errors.New("equipo_id no existe")
 	ErrConceptoPagoInvalido  = errors.New("el concepto debe ser medio_dia o dia")
+	ErrMetodoPagoInvalido    = errors.New("el método debe ser efectivo o transferencia")
 	ErrDuracionInvalida      = errors.New("la duración debe ser medio día o un día")
 	ErrCredencialesInvalidas = errors.New("email o contraseña incorrectos")
 	ErrEmailEnUso            = errors.New("ese email ya está registrado")

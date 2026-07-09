@@ -164,6 +164,10 @@ func (s *ClientesService) CrearPago(p models.Pago) (models.Pago, error) {
 	if p.Concepto != "medio_dia" && p.Concepto != "dia" {
 		return models.Pago{}, ErrConceptoPagoInvalido
 	}
+	p.Metodo = strings.TrimSpace(strings.ToLower(p.Metodo))
+	if p.Metodo != "efectivo" && p.Metodo != "transferencia" {
+		return models.Pago{}, ErrMetodoPagoInvalido
+	}
 	creado, err := s.repo.CrearPago(p)
 	if err != nil {
 		return models.Pago{}, err
@@ -188,6 +192,10 @@ func (s *ClientesService) ActualizarPago(id uint, p models.Pago) (models.Pago, e
 	p.Concepto = strings.TrimSpace(strings.ToLower(p.Concepto))
 	if p.Concepto != "medio_dia" && p.Concepto != "dia" {
 		return models.Pago{}, ErrConceptoPagoInvalido
+	}
+	p.Metodo = strings.TrimSpace(strings.ToLower(p.Metodo))
+	if p.Metodo != "efectivo" && p.Metodo != "transferencia" {
+		return models.Pago{}, ErrMetodoPagoInvalido
 	}
 	actualizado, ok := s.repo.ActualizarPago(id, p)
 	if !ok {
