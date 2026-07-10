@@ -87,6 +87,22 @@ func TestEquipoRepo_BuscarPorID(t *testing.T) {
 	require.Equal(t, "Filtro", encontrado.Nombre)
 }
 
+func TestEquipoRepo_Borrar_SoloEliminaIndicado(t *testing.T) {
+	db := abrirDBEquipo(t)
+	repo := NuevoAlmacenSQLite(db)
+
+	e1, _ := repo.CrearEquipo(models.Equipo{Nombre: "Bomba", Tipo: "bomba"})
+	e2, _ := repo.CrearEquipo(models.Equipo{Nombre: "Filtro", Tipo: "filtracion"})
+
+	repo.BorrarEquipo(e1.ID)
+
+	_, ok := repo.BuscarEquipoPorID(e2.ID)
+	require.True(t, ok, "el equipo no eliminado debe seguir existiendo")
+
+	lista := repo.ListarEquipos()
+	require.Len(t, lista, 1)
+}
+
 func TestEquipoRepo_Actualizar_CambiaTipoYEstado(t *testing.T) {
 	db := abrirDBEquipo(t)
 	repo := NuevoAlmacenSQLite(db)

@@ -209,6 +209,21 @@ func TestCrearEquipo_JSONInvalido(t *testing.T) {
 	}
 }
 
+func TestObtenerEquipo_NoEncontrado_VerificaError(t *testing.T) {
+	router := montarRouterMantenimientoPrueba()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/equipos/99", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("se esperaba 404, se obtuvo %d", rec.Code)
+	}
+	var body map[string]string
+	json.NewDecoder(rec.Body).Decode(&body)
+	if body["error"] != "equipo no encontrado" {
+		t.Fatalf("mensaje de error incorrecto: %v", body)
+	}
+}
+
 func TestObtenerEquipo_NoEncontrado(t *testing.T) {
 	router := montarRouterMantenimientoPrueba()
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/equipos/99", nil)
