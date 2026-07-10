@@ -42,6 +42,46 @@ func TestEquipoRepo_BuscarPorID(t *testing.T) {
 	require.Equal(t, "Filtro", encontrado.Nombre)
 }
 
+func TestEquipoRepo_Actualizar(t *testing.T) {
+	db := abrirDBEquipo(t)
+	repo := NuevoAlmacenSQLite(db)
+
+	creado, _ := repo.CrearEquipo(models.Equipo{Nombre: "Bomba", Tipo: "bomba", Estado: "operativo"})
+
+	actualizado, ok := repo.ActualizarEquipo(creado.ID, models.Equipo{Nombre: "Bomba 2HP"})
+	require.True(t, ok)
+	require.Equal(t, "Bomba 2HP", actualizado.Nombre)
+}
+
+func TestEquipoRepo_Actualizar_NoEncontrado(t *testing.T) {
+	db := abrirDBEquipo(t)
+	repo := NuevoAlmacenSQLite(db)
+
+	_, ok := repo.ActualizarEquipo(999, models.Equipo{Nombre: "N/A"})
+	require.False(t, ok)
+}
+
+func TestEquipoRepo_Borrar(t *testing.T) {
+	db := abrirDBEquipo(t)
+	repo := NuevoAlmacenSQLite(db)
+
+	creado, _ := repo.CrearEquipo(models.Equipo{Nombre: "Filtro", Tipo: "filtracion", Estado: "operativo"})
+
+	ok := repo.BorrarEquipo(creado.ID)
+	require.True(t, ok)
+
+	_, encontrado := repo.BuscarEquipoPorID(creado.ID)
+	require.False(t, encontrado)
+}
+
+func TestEquipoRepo_Borrar_NoEncontrado(t *testing.T) {
+	db := abrirDBEquipo(t)
+	repo := NuevoAlmacenSQLite(db)
+
+	ok := repo.BorrarEquipo(999)
+	require.False(t, ok)
+}
+
 func TestEquipoRepo_BuscarPorID_NoEncontrado(t *testing.T) {
 	db := abrirDBEquipo(t)
 	repo := NuevoAlmacenSQLite(db)
