@@ -30,6 +30,55 @@ func TestEquipoService_Obtener_NoEncontrado(t *testing.T) {
 	}
 }
 
+func TestEquipoService_Crear_NombreVacio(t *testing.T) {
+	repo := newMantenimientoRepoMock()
+	svc := NewMantenimientoService(repo)
+
+	_, err := svc.CrearEquipo(models.Equipo{Tipo: "bomba"})
+	if err != ErrCampoObligatorio {
+		t.Fatalf("se esperaba ErrCampoObligatorio, se obtuvo %v", err)
+	}
+}
+
+func TestEquipoService_Crear_TipoVacio(t *testing.T) {
+	repo := newMantenimientoRepoMock()
+	svc := NewMantenimientoService(repo)
+
+	_, err := svc.CrearEquipo(models.Equipo{Nombre: "Bomba"})
+	if err != ErrCampoObligatorio {
+		t.Fatalf("se esperaba ErrCampoObligatorio, se obtuvo %v", err)
+	}
+}
+
+func TestEquipoService_Crear_AsignaEstadoOperativo(t *testing.T) {
+	repo := newMantenimientoRepoMock()
+	svc := NewMantenimientoService(repo)
+
+	creado, err := svc.CrearEquipo(models.Equipo{Nombre: "Bomba", Tipo: "bomba"})
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if creado.Estado != "operativo" {
+		t.Fatalf("se esperaba estado operativo, se obtuvo %q", creado.Estado)
+	}
+}
+
+func TestEquipoService_Crear_Exitoso(t *testing.T) {
+	repo := newMantenimientoRepoMock()
+	svc := NewMantenimientoService(repo)
+
+	creado, err := svc.CrearEquipo(models.Equipo{Nombre: "Bomba", Tipo: "bomba", Estado: "averiado"})
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if creado.Nombre != "Bomba" {
+		t.Fatalf("se esperaba Bomba, se obtuvo %s", creado.Nombre)
+	}
+	if creado.Estado != "averiado" {
+		t.Fatalf("debe conservar el estado enviado, se obtuvo %q", creado.Estado)
+	}
+}
+
 func TestEquipoService_Obtener_Encontrado(t *testing.T) {
 	repo := newMantenimientoRepoMock()
 	repo.equipos[1] = models.Equipo{Nombre: "Bomba", Tipo: "bomba"}
