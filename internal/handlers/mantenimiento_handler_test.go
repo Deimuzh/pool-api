@@ -218,6 +218,18 @@ func TestActualizarEquipo_IDInvalido(t *testing.T) {
 	}
 }
 
+func TestActualizarEquipo_NoEncontrado(t *testing.T) {
+	router := montarRouterMantenimientoPrueba()
+	body, _ := json.Marshal(models.Equipo{Nombre: "Nueva", Tipo: "bomba"})
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/equipos/99", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("se esperaba 404, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestActualizarEquipo_CampoObligatorio(t *testing.T) {
 	router := montarRouterMantenimientoPrueba()
 	body, _ := json.Marshal(models.Equipo{Nombre: ""})
