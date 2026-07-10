@@ -11,6 +11,7 @@ type mantenimientoRepoMock struct {
 	equipos            map[uint]models.Equipo
 	crearEquipoLlamado bool
 	crearRegistro      bool
+	crearEquipoError   error
 }
 
 // Verificación en compilación de que implementa la interfaz:
@@ -27,6 +28,9 @@ func (m *mantenimientoRepoMock) BuscarEquipoPorID(id uint) (models.Equipo, bool)
 }
 func (m *mantenimientoRepoMock) CrearEquipo(e models.Equipo) (models.Equipo, error) {
 	m.crearEquipoLlamado = true
+	if m.crearEquipoError != nil {
+		return models.Equipo{}, m.crearEquipoError
+	}
 	e.ID = uint(len(m.equipos) + 1)
 	m.equipos[e.ID] = e
 	return e, nil

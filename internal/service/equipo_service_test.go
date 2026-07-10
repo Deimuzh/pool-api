@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"testing"
 
 	"pool-api/internal/models"
@@ -27,6 +28,17 @@ func TestEquipoService_Obtener_NoEncontrado(t *testing.T) {
 	_, ok := svc.ObtenerEquipo(999)
 	if ok {
 		t.Fatal("no debe encontrar equipo inexistente")
+	}
+}
+
+func TestEquipoService_Crear_ErrorRepo(t *testing.T) {
+	repo := newMantenimientoRepoMock()
+	repo.crearEquipoError = errors.New("db error")
+	svc := NewMantenimientoService(repo)
+
+	_, err := svc.CrearEquipo(models.Equipo{Nombre: "Bomba", Tipo: "bomba"})
+	if err == nil || err.Error() != "db error" {
+		t.Fatalf("se esperaba 'db error', se obtuvo %v", err)
 	}
 }
 
