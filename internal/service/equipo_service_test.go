@@ -92,3 +92,55 @@ func TestEquipoService_Obtener_Encontrado(t *testing.T) {
 		t.Fatalf("se esperaba Bomba, se obtuvo %s", e.Nombre)
 	}
 }
+
+func TestEquipoService_Actualizar_Exitoso(t *testing.T) {
+	repo := newMantenimientoRepoMock()
+	repo.equipos[1] = models.Equipo{Nombre: "Bomba", Tipo: "bomba", Estado: "operativo"}
+	svc := NewMantenimientoService(repo)
+
+	actualizado, err := svc.ActualizarEquipo(1, models.Equipo{Nombre: "Bomba 2HP", Tipo: "bomba"})
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if actualizado.Nombre != "Bomba 2HP" {
+		t.Fatalf("se esperaba 'Bomba 2HP', se obtuvo %s", actualizado.Nombre)
+	}
+}
+
+func TestEquipoService_Actualizar_CampoObligatorio(t *testing.T) {
+	repo := newMantenimientoRepoMock()
+	repo.equipos[1] = models.Equipo{Nombre: "Bomba", Tipo: "bomba"}
+	svc := NewMantenimientoService(repo)
+
+	_, err := svc.ActualizarEquipo(1, models.Equipo{Nombre: "", Tipo: ""})
+	if err != ErrCampoObligatorio {
+		t.Fatalf("se esperaba ErrCampoObligatorio, se obtuvo %v", err)
+	}
+}
+
+func TestEquipoService_Actualizar_NoEncontrado(t *testing.T) {
+	svc := NewMantenimientoService(newMantenimientoRepoMock())
+	_, err := svc.ActualizarEquipo(999, models.Equipo{Nombre: "Nuevo", Tipo: "bomba"})
+	if err != ErrNoEncontrado {
+		t.Fatalf("se esperaba ErrNoEncontrado, se obtuvo %v", err)
+	}
+}
+
+func TestEquipoService_Borrar_Exitoso(t *testing.T) {
+	repo := newMantenimientoRepoMock()
+	repo.equipos[1] = models.Equipo{Nombre: "Bomba", Tipo: "bomba"}
+	svc := NewMantenimientoService(repo)
+
+	err := svc.BorrarEquipo(1)
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+}
+
+func TestEquipoService_Borrar_NoEncontrado(t *testing.T) {
+	svc := NewMantenimientoService(newMantenimientoRepoMock())
+	err := svc.BorrarEquipo(999)
+	if err != ErrNoEncontrado {
+		t.Fatalf("se esperaba ErrNoEncontrado, se obtuvo %v", err)
+	}
+}
