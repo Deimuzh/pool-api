@@ -181,3 +181,11 @@ func TestEquipoService_Borrar_NoEncontrado(t *testing.T) {
 		t.Fatalf("se esperaba ErrNoEncontrado, se obtuvo %v", err)
 	}
 }
+
+func TestEquipoService_Obtener_IDCero(t *testing.T) {
+	svc := NewMantenimientoService(newMantenimientoRepoMock())
+	_, ok := svc.ObtenerEquipo(0)
+	if ok {
+		t.Fatal("no debe encontrar equipo con ID 0")
+	}
+}
