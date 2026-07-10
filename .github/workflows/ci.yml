@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, "feat/**"]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint-test-build:
+    name: lint-test-build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v4
+
+      - name: Instalar Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+          cache: true
+
+      - name: Descargar dependencias
+        run: go mod download
+
+      - name: Lint basico con go vet
+        run: go vet ./...
+
+      - name: Ejecutar tests
+        run: go test ./... -cover
+
+      - name: Compilar API
+        run: go build ./cmd/piscina-api
