@@ -156,7 +156,7 @@ func TestListarPagos_Handler(t *testing.T) {
 
 func TestCrearPago_Handler(t *testing.T) {
 	router := montarRouterClientesPrueba()
-	body, _ := json.Marshal(models.Pago{ClienteID: 1, Monto: 5, Concepto: "dia"})
+	body, _ := json.Marshal(models.Pago{ClienteID: 1, Monto: 5, Concepto: "dia", Metodo: "efectivo"})
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/pagos/", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()

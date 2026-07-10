@@ -120,6 +120,13 @@ func TestMantenimientoService_CrearEquipo_AsignaEstadoOperativo(t *testing.T) {
 	}
 }
 
+func TestClientesService_ListarEquiposDisponibles(t *testing.T) {
+	repo := newMantenimientoRepoMock()
+	svc := NewMantenimientoService(repo)
+
+	_ = svc.ListarEquipos()
+}
+
 func TestMantenimientoService_CrearRegistro_EquipoInvalido(t *testing.T) {
 	repo := newMantenimientoRepoMock()
 	svc := NewMantenimientoService(repo)

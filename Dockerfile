@@ -9,6 +9,7 @@ RUN go mod download
 COPY . .
 # CGO_ENABLED=0 genera un binario estático, útil para una imagen final pequeña.
 RUN CGO_ENABLED=0 GOOS=linux go build -o /out/piscina-api ./cmd/piscina-api
+RUN CGO_ENABLED=0 GOOS=linux go build -o /out/seed ./cmd/seed
 
 # Etapa 2: imagen final mínima, sin compilador Go.
 FROM alpine:3.22
@@ -16,10 +17,11 @@ FROM alpine:3.22
 WORKDIR /app
 
 COPY --from=build /out/piscina-api /app/piscina-api
+COPY --from=build /out/seed /app/seed
 COPY web /app/web
 
 # Usuario no-root por seguridad.
-RUN adduser -D -u 10001 appuser && chown -R appuser:appuser /app
+RUN apk add --no-cache tzdata && adduser -D -u 10001 appuser && chown -R appuser:appuser /app
 USER appuser
 
 EXPOSE 8080
