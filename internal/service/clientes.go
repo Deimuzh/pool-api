@@ -2,6 +2,8 @@ package service
 
 import (
 	"errors"
+	"net/mail"
+	"regexp"
 	"strings"
 
 	"gorm.io/gorm"
@@ -29,9 +31,26 @@ func (s *ClientesService) ObtenerCliente(id uint) (models.Cliente, bool) {
 	return s.repo.BuscarClientePorID(id)
 }
 
+func validarEmail(email string) bool {
+	_, err := mail.ParseAddress(email)
+	return err == nil
+}
+
+var reCedula = regexp.MustCompile(`^\d{10}$`)
+
 func (s *ClientesService) CrearCliente(c models.Cliente) (models.Cliente, error) {
+	c.Nombre = strings.TrimSpace(c.Nombre)
+	c.Cedula = strings.TrimSpace(c.Cedula)
+	c.Email = strings.TrimSpace(c.Email)
+	c.Telefono = strings.TrimSpace(c.Telefono)
 	if c.Nombre == "" || c.Cedula == "" {
 		return models.Cliente{}, ErrCampoObligatorio
+	}
+	if !reCedula.MatchString(c.Cedula) {
+		return models.Cliente{}, ErrCedulaFormatoInvalido
+	}
+	if c.Email != "" && !validarEmail(c.Email) {
+		return models.Cliente{}, ErrEmailFormatoInvalido
 	}
 	if c.Membresia == "" {
 		c.Membresia = "ninguna"
@@ -49,8 +68,29 @@ func (s *ClientesService) CrearCliente(c models.Cliente) (models.Cliente, error)
 }
 
 func (s *ClientesService) ActualizarCliente(id uint, c models.Cliente) (models.Cliente, error) {
+	c.Nombre = strings.TrimSpace(c.Nombre)
+	c.Cedula = strings.TrimSpace(c.Cedula)
+	c.Email = strings.TrimSpace(c.Email)
+	c.Telefono = strings.TrimSpace(c.Telefono)
 	if c.Nombre == "" || c.Cedula == "" {
 		return models.Cliente{}, ErrCampoObligatorio
+	}
+	if !reCedula.MatchString(c.Cedula) {
+		return models.Cliente{}, ErrCedulaFormatoInvalido
+	}
+	if c.Email != "" && !validarEmail(c.Email) {
+		return models.Cliente{}, ErrEmailFormatoInvalido
+	}
+	existente, ok := s.repo.BuscarClientePorID(id)
+	if !ok {
+		return models.Cliente{}, ErrNoEncontrado
+	}
+	if existente.Cedula != c.Cedula {
+		for _, cl := range s.repo.ListarClientes() {
+			if cl.Cedula == c.Cedula {
+				return models.Cliente{}, ErrCedulaEnUso
+			}
+		}
 	}
 	actualizado, ok := s.repo.ActualizarCliente(id, c)
 	if !ok {
@@ -60,6 +100,16 @@ func (s *ClientesService) ActualizarCliente(id uint, c models.Cliente) (models.C
 }
 
 func (s *ClientesService) BorrarCliente(id uint) error {
+	for _, rv := range s.repo.ListarReservas() {
+		if rv.ClienteID == id {
+			s.repo.BorrarReserva(rv.ID)
+		}
+	}
+	for _, p := range s.repo.ListarPagos() {
+		if p.ClienteID == id {
+			s.repo.BorrarPago(p.ID)
+		}
+	}
 	if !s.repo.BorrarCliente(id) {
 		return ErrNoEncontrado
 	}
@@ -156,6 +206,10 @@ func (s *ClientesService) CrearPago(p models.Pago) (models.Pago, error) {
 	if p.Concepto != "medio_dia" && p.Concepto != "dia" {
 		return models.Pago{}, ErrConceptoPagoInvalido
 	}
+	p.Metodo = strings.TrimSpace(strings.ToLower(p.Metodo))
+	if p.Metodo != "efectivo" && p.Metodo != "transferencia" {
+		return models.Pago{}, ErrMetodoPagoInvalido
+	}
 	creado, err := s.repo.CrearPago(p)
 	if err != nil {
 		return models.Pago{}, err
@@ -181,6 +235,10 @@ func (s *ClientesService) ActualizarPago(id uint, p models.Pago) (models.Pago, e
 	if p.Concepto != "medio_dia" && p.Concepto != "dia" {
 		return models.Pago{}, ErrConceptoPagoInvalido
 	}
+	p.Metodo = strings.TrimSpace(strings.ToLower(p.Metodo))
+	if p.Metodo != "efectivo" && p.Metodo != "transferencia" {
+		return models.Pago{}, ErrMetodoPagoInvalido
+	}
 	actualizado, ok := s.repo.ActualizarPago(id, p)
 	if !ok {
 		return models.Pago{}, ErrNoEncontrado
@@ -196,5 +254,6 @@ func (s *ClientesService) BorrarPago(id uint) error {
 }
 
 func clienteTieneMembresia(c models.Cliente) bool {
-	return strings.TrimSpace(strings.ToLower(c.Membresia)) != "" && strings.TrimSpace(strings.ToLower(c.Membresia)) != "ninguna"
+	m := strings.TrimSpace(strings.ToLower(c.Membresia))
+	return m != "" && m != "ninguna"
 }

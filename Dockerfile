@@ -21,7 +21,7 @@ COPY --from=build /out/seed /app/seed
 COPY web /app/web
 
 # Usuario no-root por seguridad.
-RUN adduser -D -u 10001 appuser && chown -R appuser:appuser /app
+RUN apk add --no-cache tzdata && adduser -D -u 10001 appuser && chown -R appuser:appuser /app
 USER appuser
 
 EXPOSE 8080

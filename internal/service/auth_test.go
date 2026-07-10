@@ -309,3 +309,42 @@ func TestAuthService_BorrarUsuario(t *testing.T) {
 		t.Fatalf("se esperaba ErrNoEncontrado, se obtuvo %v", err)
 	}
 }
+
+func TestClientesService_LoginClienteExitoso(t *testing.T) {
+	repo := nuevoMockUsuarioRepo()
+	svc := NewAuthService(repo)
+
+	u, _ := svc.CrearUsuario("Cliente Uno", "cliente@test.com", "pass123", "cliente")
+
+	token, _, err := svc.Login(u.Email, "pass123")
+	if err != nil {
+		t.Fatalf("se esperaba login exitoso, se obtuvo %v", err)
+	}
+	if token == "" {
+		t.Fatal("el token no debe estar vacio")
+	}
+}
+
+func TestClientesService_LoginClienteCredencialesInvalidas(t *testing.T) {
+	repo := nuevoMockUsuarioRepo()
+	svc := NewAuthService(repo)
+
+	_, _, err := svc.Login("", "")
+	if err != ErrCredencialesInvalidas {
+		t.Fatalf("se esperaba ErrCredencialesInvalidas, se obtuvo %v", err)
+	}
+}
+
+func TestPagoCliente_ActualizarUsuario(t *testing.T) {
+	repo := nuevoMockUsuarioRepo()
+	svc := NewAuthService(repo)
+
+	original, _ := svc.CrearUsuario("Original", "orig@test.com", "pass123", "admin")
+	actualizado, err := svc.ActualizarUsuario(original.ID, "Actualizado", "orig@test.com", "", "admin")
+	if err != nil {
+		t.Fatalf("no se esperaba error, se obtuvo %v", err)
+	}
+	if actualizado.Nombre != "Actualizado" {
+		t.Fatal("el nombre deberia haberse actualizado")
+	}
+}
