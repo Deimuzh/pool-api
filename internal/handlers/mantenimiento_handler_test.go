@@ -313,6 +313,38 @@ func TestBorrarEquipo_NoEncontrado(t *testing.T) {
 	}
 }
 
+func TestBorrarEquipo_VerificaMensaje(t *testing.T) {
+	router := montarRouterMantenimientoPrueba()
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/equipos/1", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("se esperaba 200, se obtuvo %d", rec.Code)
+	}
+	var body map[string]string
+	json.NewDecoder(rec.Body).Decode(&body)
+	if body["mensaje"] != "equipo eliminado" {
+		t.Fatalf("se esperaba mensaje de eliminacion, se obtuvo %v", body)
+	}
+}
+
+func TestActualizarEquipo_VerificaRespuesta(t *testing.T) {
+	router := montarRouterMantenimientoPrueba()
+	body, _ := json.Marshal(models.Equipo{Nombre: "Bomba Actualizada", Tipo: "bomba"})
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/equipos/1", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("se esperaba 200, se obtuvo %d", rec.Code)
+	}
+	var actualizado models.Equipo
+	json.NewDecoder(rec.Body).Decode(&actualizado)
+	if actualizado.Nombre != "Bomba Actualizada" {
+		t.Fatalf("se esperaba 'Bomba Actualizada', se obtuvo %s", actualizado.Nombre)
+	}
+}
+
 func TestBorrarEquipo_IDInvalido(t *testing.T) {
 	router := montarRouterMantenimientoPrueba()
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/equipos/abc", nil)
