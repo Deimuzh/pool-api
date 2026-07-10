@@ -59,6 +59,18 @@ func TestEquipoRepo_BuscarPorID(t *testing.T) {
 	require.Equal(t, "Filtro", encontrado.Nombre)
 }
 
+func TestEquipoRepo_Actualizar_CambiaTipoYEstado(t *testing.T) {
+	db := abrirDBEquipo(t)
+	repo := NuevoAlmacenSQLite(db)
+
+	creado, _ := repo.CrearEquipo(models.Equipo{Nombre: "Filtro", Tipo: "filtracion", Estado: "operativo"})
+
+	actualizado, ok := repo.ActualizarEquipo(creado.ID, models.Equipo{Nombre: "Filtro", Tipo: "bomba", Estado: "averiado"})
+	require.True(t, ok)
+	require.Equal(t, "bomba", actualizado.Tipo)
+	require.Equal(t, "averiado", actualizado.Estado)
+}
+
 func TestEquipoRepo_Actualizar(t *testing.T) {
 	db := abrirDBEquipo(t)
 	repo := NuevoAlmacenSQLite(db)
