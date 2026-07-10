@@ -3,7 +3,11 @@ package service
 import (
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+
 	"pool-api/internal/models"
+	"pool-api/internal/storage"
 )
 
 // ─── MOCKS MANUALES ─────────────────────────────────────────────────────────
@@ -20,34 +24,86 @@ type mockSeguridadRepo struct {
 	crearAccesoLlamado bool
 	accesoRecibido     models.AccesoCliente
 	guardavidas        map[int]models.Guardavida
+	accesos            []models.AccesoCliente
+	incidentes         map[int]models.Incidente
 }
 
-func (m *mockSeguridadRepo) ListarGuardavidas() []models.Guardavida { return nil }
+func (m *mockSeguridadRepo) ListarGuardavidas() []models.Guardavida {
+	lista := make([]models.Guardavida, 0, len(m.guardavidas))
+	for _, g := range m.guardavidas {
+		lista = append(lista, g)
+	}
+	return lista
+}
 func (m *mockSeguridadRepo) BuscarGuardavidaPorID(id uint) (models.Guardavida, bool) {
 	g, ok := m.guardavidas[int(id)]
 	return g, ok
 
 }
-func (m *mockSeguridadRepo) CrearGuardavida(g models.Guardavida) models.Guardavida { return g }
-func (m *mockSeguridadRepo) ActualizarGuardavida(id uint, datos models.Guardavida) (models.Guardavida, bool) {
-	return models.Guardavida{}, false
+func (m *mockSeguridadRepo) CrearGuardavida(g models.Guardavida) models.Guardavida {
+	g.ID = 1
+	return g
 }
-func (m *mockSeguridadRepo) BorrarGuardavida(id uint) bool { return false }
+func (m *mockSeguridadRepo) ActualizarGuardavida(id uint, datos models.Guardavida) (models.Guardavida, bool) {
+	if m.guardavidas == nil {
+		return models.Guardavida{}, false
+	}
+	if _, ok := m.guardavidas[int(id)]; !ok {
+		return models.Guardavida{}, false
+	}
+	datos.ID = id
+	return datos, true
+}
+func (m *mockSeguridadRepo) BorrarGuardavida(id uint) bool {
+	if m.guardavidas == nil {
+		return false
+	}
+	if _, ok := m.guardavidas[int(id)]; !ok {
+		return false
+	}
+	delete(m.guardavidas, int(id))
+	return true
+}
 
-func (m *mockSeguridadRepo) ListarIncidentes() []models.Incidente { return nil }
+func (m *mockSeguridadRepo) ListarIncidentes() []models.Incidente {
+	lista := make([]models.Incidente, 0, len(m.incidentes))
+	for _, i := range m.incidentes {
+		lista = append(lista, i)
+	}
+	return lista
+}
 func (m *mockSeguridadRepo) BuscarIncidentePorID(id uint) (models.Incidente, bool) {
-	return models.Incidente{}, false
+	i, ok := m.incidentes[int(id)]
+	return i, ok
 }
 func (m *mockSeguridadRepo) CrearIncidente(i models.Incidente) models.Incidente {
 	i.ID = 1
 	return i
 }
 func (m *mockSeguridadRepo) ActualizarIncidente(id uint, datos models.Incidente) (models.Incidente, bool) {
-	return models.Incidente{}, false
+	if m.incidentes == nil {
+		return models.Incidente{}, false
+	}
+	if _, ok := m.incidentes[int(id)]; !ok {
+		return models.Incidente{}, false
+	}
+	datos.ID = id
+	return datos, true
 }
-func (m *mockSeguridadRepo) BorrarIncidente(id uint) bool { return false }
+func (m *mockSeguridadRepo) BorrarIncidente(id uint) bool {
+	if m.incidentes == nil {
+		return false
+	}
+	if _, ok := m.incidentes[int(id)]; !ok {
+		return false
+	}
+	delete(m.incidentes, int(id))
+	return true
+}
 
-func (m *mockSeguridadRepo) ListarAccesos() []models.AccesoCliente { return nil }
+func (m *mockSeguridadRepo) ListarAccesos() []models.AccesoCliente {
+	return m.accesos
+}
 func (m *mockSeguridadRepo) BuscarAccesoPorID(id uint) (models.AccesoCliente, bool) {
 	return models.AccesoCliente{}, false
 }
@@ -63,7 +119,15 @@ func (m *mockSeguridadRepo) CrearAcceso(a models.AccesoCliente) models.AccesoCli
 func (m *mockSeguridadRepo) ActualizarAcceso(id uint, datos models.AccesoCliente) (models.AccesoCliente, bool) {
 	return models.AccesoCliente{}, false
 }
-func (m *mockSeguridadRepo) BorrarAcceso(id uint) bool { return false }
+func (m *mockSeguridadRepo) BorrarAcceso(id uint) bool {
+	for i, acceso := range m.accesos {
+		if acceso.ID == id {
+			m.accesos = append(m.accesos[:i], m.accesos[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
 
 // mockClienteRepo es un mock de storage.ClienteRepository: solo necesitamos
 // BuscarClientePorID para que CrearAcceso pueda validar que el cliente existe.
@@ -326,5 +390,695 @@ func TestCrearIncidente_CamposObligatoriosNoLlegaAlRepo(t *testing.T) {
 	})
 	if err != ErrCampoObligatorio {
 		t.Fatalf("se esperaba ErrCampoObligatorio, se obtuvo: %v", err)
+	}
+}
+
+// TestCrearGuardavida_CamposValidos verifica que un guardavida con nombre y turno válidos
+// se cree correctamente y reciba un ID desde el repositorio mock.
+func TestCrearGuardavida_CamposValidos(t *testing.T) {
+	repo := &mockSeguridadRepo{}
+	svc := NewSeguridadService(repo, &mockClienteRepo{}, &mockPagoRepo{})
+
+	creado, err := svc.CrearGuardavida(models.Guardavida{
+		Nombre: "Pedro Salazar",
+		Turno:  "tarde",
+	})
+
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if creado.ID != 1 {
+		t.Fatalf("se esperaba ID 1, se obtuvo %d", creado.ID)
+	}
+}
+
+// TestCrearGuardavida_CamposObligatorios verifica que el service rechace la creación
+// cuando falta un campo obligatorio, en este caso el turno.
+func TestCrearGuardavida_CamposObligatorios(t *testing.T) {
+	repo := &mockSeguridadRepo{}
+	svc := NewSeguridadService(repo, &mockClienteRepo{}, &mockPagoRepo{})
+
+	_, err := svc.CrearGuardavida(models.Guardavida{
+		Nombre: "Pedro Salazar",
+	})
+
+	if err != ErrCampoObligatorio {
+		t.Fatalf("se esperaba ErrCampoObligatorio, se obtuvo %v", err)
+	}
+}
+
+// TestActualizarGuardavida_Valido verifica que un guardavida existente pueda actualizarse
+// correctamente cuando los datos enviados son válidos.
+func TestActualizarGuardavida_Valido(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		guardavidas: map[int]models.Guardavida{
+			1: {ID: 1, Nombre: "Pedro", Turno: "mañana"},
+		},
+	}
+	svc := NewSeguridadService(repo, &mockClienteRepo{}, &mockPagoRepo{})
+
+	actualizado, err := svc.ActualizarGuardavida(1, models.Guardavida{
+		Nombre: "Pedro Actualizado",
+		Turno:  "noche",
+	})
+
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if actualizado.Nombre != "Pedro Actualizado" {
+		t.Fatalf("nombre inesperado: %s", actualizado.Nombre)
+	}
+}
+
+// TestActualizarGuardavida_Inexistente verifica que el service devuelva ErrNoEncontrado
+// cuando se intenta actualizar un guardavida que no existe en el repositorio.
+func TestActualizarGuardavida_Inexistente(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		guardavidas: map[int]models.Guardavida{},
+	}
+	svc := NewSeguridadService(repo, &mockClienteRepo{}, &mockPagoRepo{})
+
+	_, err := svc.ActualizarGuardavida(99, models.Guardavida{
+		Nombre: "Pedro",
+		Turno:  "tarde",
+	})
+
+	if err != ErrNoEncontrado {
+		t.Fatalf("se esperaba ErrNoEncontrado, se obtuvo %v", err)
+	}
+}
+
+// TestObtenerIncidente_Existente verifica que un incidente existente se obtenga
+// enriquecido con el nombre del guardavida y del cliente.
+func TestObtenerIncidente_Existente(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		guardavidas: map[int]models.Guardavida{
+			1: {ID: 1, Nombre: "Carlos Mendoza"},
+		},
+		incidentes: map[int]models.Incidente{
+			10: {ID: 10, Tipo: "lesion", Gravedad: "leve", GuardavidaID: 1, ClienteID: 2},
+		},
+	}
+	clientes := &mockClienteRepo{
+		clientes: map[int]models.Cliente{
+			2: {ID: 2, Nombre: "Ana Reyes", Membresia: "mensual"},
+		},
+	}
+	svc := NewSeguridadService(repo, clientes, &mockPagoRepo{})
+
+	incidente, ok := svc.ObtenerIncidente(10)
+
+	if !ok {
+		t.Fatal("se esperaba encontrar el incidente")
+	}
+	if incidente.NombreGuardavida != "Carlos Mendoza" {
+		t.Fatalf("nombre de guardavida inesperado: %s", incidente.NombreGuardavida)
+	}
+	if incidente.NombreCliente != "Ana Reyes" {
+		t.Fatalf("nombre de cliente inesperado: %s", incidente.NombreCliente)
+	}
+}
+
+// TestActualizarIncidente_Valido verifica que un incidente existente pueda actualizarse
+// cuando el guardavida y el cliente cumplen las reglas de negocio.
+func TestActualizarIncidente_Valido(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		guardavidas: map[int]models.Guardavida{
+			1: {ID: 1, Nombre: "Carlos Mendoza"},
+		},
+		incidentes: map[int]models.Incidente{
+			5: {ID: 5, Tipo: "lesion", Gravedad: "leve", GuardavidaID: 1, ClienteID: 2},
+		},
+	}
+	clientes := &mockClienteRepo{
+		clientes: map[int]models.Cliente{
+			2: {ID: 2, Nombre: "Ana Reyes", Membresia: "mensual"},
+		},
+	}
+	svc := NewSeguridadService(repo, clientes, &mockPagoRepo{})
+
+	actualizado, err := svc.ActualizarIncidente(5, models.Incidente{
+		Tipo:         "rescate",
+		Gravedad:     "media",
+		GuardavidaID: 1,
+		ClienteID:    2,
+	})
+
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if actualizado.Tipo != "rescate" {
+		t.Fatalf("tipo inesperado: %s", actualizado.Tipo)
+	}
+	if actualizado.NombreCliente != "Ana Reyes" {
+		t.Fatalf("nombre de cliente inesperado: %s", actualizado.NombreCliente)
+	}
+}
+
+// TestListarAccesos_EnriqueceNombreYPago verifica que ListarAccesos devuelva
+// accesos con el nombre del cliente y el estado de pago calculado.
+func TestListarAccesos_EnriqueceNombreYPago(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		accesos: []models.AccesoCliente{
+			{ID: 1, ClienteID: 2, Autorizado: true},
+		},
+	}
+	clientes := &mockClienteRepo{
+		clientes: map[int]models.Cliente{
+			2: {ID: 2, Nombre: "Luis Pino", Membresia: "ninguna"},
+		},
+	}
+	pagos := &mockPagoRepo{tienePago: true}
+	svc := NewSeguridadService(repo, clientes, pagos)
+
+	accesos := svc.ListarAccesos()
+
+	if len(accesos) != 1 {
+		t.Fatalf("se esperaba 1 acceso, se obtuvieron %d", len(accesos))
+	}
+	if accesos[0].NombreCliente != "Luis Pino" {
+		t.Fatalf("nombre de cliente inesperado: %s", accesos[0].NombreCliente)
+	}
+	if !accesos[0].PagoAlDia {
+		t.Fatal("se esperaba pago al día")
+	}
+}
+
+// TestBorrarAcceso_Inexistente verifica que el service devuelva ErrNoEncontrado
+// cuando se intenta borrar un acceso inexistente.
+func TestBorrarAcceso_Inexistente(t *testing.T) {
+	repo := &mockSeguridadRepo{}
+	svc := NewSeguridadService(repo, &mockClienteRepo{}, &mockPagoRepo{})
+
+	err := svc.BorrarAcceso(99)
+
+	if err != ErrNoEncontrado {
+		t.Fatalf("se esperaba ErrNoEncontrado, se obtuvo %v", err)
+	}
+}
+
+// ─── TESTIFY MOCKS ──────────────────────────────────────────────────────────
+
+type seguridadRepoTestifyMock struct {
+	mock.Mock
+}
+
+var _ storage.SeguridadRepository = (*seguridadRepoTestifyMock)(nil)
+
+func (m *seguridadRepoTestifyMock) ListarGuardavidas() []models.Guardavida {
+	args := m.Called()
+	return args.Get(0).([]models.Guardavida)
+}
+
+func (m *seguridadRepoTestifyMock) BuscarGuardavidaPorID(id uint) (models.Guardavida, bool) {
+	args := m.Called(id)
+	return args.Get(0).(models.Guardavida), args.Bool(1)
+}
+
+func (m *seguridadRepoTestifyMock) CrearGuardavida(g models.Guardavida) models.Guardavida {
+	args := m.Called(g)
+	return args.Get(0).(models.Guardavida)
+}
+
+func (m *seguridadRepoTestifyMock) ActualizarGuardavida(id uint, datos models.Guardavida) (models.Guardavida, bool) {
+	args := m.Called(id, datos)
+	return args.Get(0).(models.Guardavida), args.Bool(1)
+}
+
+func (m *seguridadRepoTestifyMock) BorrarGuardavida(id uint) bool {
+	args := m.Called(id)
+	return args.Bool(0)
+}
+
+func (m *seguridadRepoTestifyMock) ListarIncidentes() []models.Incidente {
+	args := m.Called()
+	return args.Get(0).([]models.Incidente)
+}
+
+func (m *seguridadRepoTestifyMock) BuscarIncidentePorID(id uint) (models.Incidente, bool) {
+	args := m.Called(id)
+	return args.Get(0).(models.Incidente), args.Bool(1)
+}
+
+func (m *seguridadRepoTestifyMock) CrearIncidente(i models.Incidente) models.Incidente {
+	args := m.Called(i)
+	return args.Get(0).(models.Incidente)
+}
+
+func (m *seguridadRepoTestifyMock) ActualizarIncidente(id uint, datos models.Incidente) (models.Incidente, bool) {
+	args := m.Called(id, datos)
+	return args.Get(0).(models.Incidente), args.Bool(1)
+}
+
+func (m *seguridadRepoTestifyMock) BorrarIncidente(id uint) bool {
+	args := m.Called(id)
+	return args.Bool(0)
+}
+
+func (m *seguridadRepoTestifyMock) ListarAccesos() []models.AccesoCliente {
+	args := m.Called()
+	return args.Get(0).([]models.AccesoCliente)
+}
+
+func (m *seguridadRepoTestifyMock) BuscarAccesoPorID(id uint) (models.AccesoCliente, bool) {
+	args := m.Called(id)
+	return args.Get(0).(models.AccesoCliente), args.Bool(1)
+}
+
+func (m *seguridadRepoTestifyMock) CrearAcceso(a models.AccesoCliente) models.AccesoCliente {
+	args := m.Called(a)
+	return args.Get(0).(models.AccesoCliente)
+}
+
+func (m *seguridadRepoTestifyMock) ActualizarAcceso(id uint, datos models.AccesoCliente) (models.AccesoCliente, bool) {
+	args := m.Called(id, datos)
+	return args.Get(0).(models.AccesoCliente), args.Bool(1)
+}
+
+func (m *seguridadRepoTestifyMock) BorrarAcceso(id uint) bool {
+	args := m.Called(id)
+	return args.Bool(0)
+}
+
+type clienteRepoTestifyMock struct {
+	mock.Mock
+}
+
+var _ storage.ClienteRepository = (*clienteRepoTestifyMock)(nil)
+
+func (m *clienteRepoTestifyMock) ListarClientes() []models.Cliente {
+	args := m.Called()
+	return args.Get(0).([]models.Cliente)
+}
+
+func (m *clienteRepoTestifyMock) BuscarClientePorID(id uint) (models.Cliente, bool) {
+	args := m.Called(id)
+	return args.Get(0).(models.Cliente), args.Bool(1)
+}
+
+func (m *clienteRepoTestifyMock) CrearCliente(c models.Cliente) (models.Cliente, error) {
+	args := m.Called(c)
+	return args.Get(0).(models.Cliente), args.Error(1)
+}
+
+func (m *clienteRepoTestifyMock) ActualizarCliente(id uint, datos models.Cliente) (models.Cliente, bool) {
+	args := m.Called(id, datos)
+	return args.Get(0).(models.Cliente), args.Bool(1)
+}
+
+func (m *clienteRepoTestifyMock) BorrarCliente(id uint) bool {
+	args := m.Called(id)
+	return args.Bool(0)
+}
+
+type pagoRepoTestifyMock struct {
+	mock.Mock
+}
+
+var _ storage.PagoRepository = (*pagoRepoTestifyMock)(nil)
+
+func (m *pagoRepoTestifyMock) ListarPagos() []models.Pago {
+	args := m.Called()
+	return args.Get(0).([]models.Pago)
+}
+
+func (m *pagoRepoTestifyMock) BuscarPagoPorID(id uint) (models.Pago, bool) {
+	args := m.Called(id)
+	return args.Get(0).(models.Pago), args.Bool(1)
+}
+
+func (m *pagoRepoTestifyMock) CrearPago(p models.Pago) (models.Pago, error) {
+	args := m.Called(p)
+	return args.Get(0).(models.Pago), args.Error(1)
+}
+
+func (m *pagoRepoTestifyMock) ActualizarPago(id uint, datos models.Pago) (models.Pago, bool) {
+	args := m.Called(id, datos)
+	return args.Get(0).(models.Pago), args.Bool(1)
+}
+
+func (m *pagoRepoTestifyMock) BorrarPago(id uint) bool {
+	args := m.Called(id)
+	return args.Bool(0)
+}
+
+func (m *pagoRepoTestifyMock) ClienteTienePagoEntrada(clienteID uint) bool {
+	args := m.Called(clienteID)
+	return args.Bool(0)
+}
+
+func TestSeguridadService_CrearAcceso_ConTestifyMock(t *testing.T) {
+	seguridad := new(seguridadRepoTestifyMock)
+	clientes := new(clienteRepoTestifyMock)
+	pagos := new(pagoRepoTestifyMock)
+
+	cliente := models.Cliente{ID: 7, Nombre: "Carlos Mero", Membresia: "ninguna"}
+	accesoEsperado := models.AccesoCliente{ID: 1, ClienteID: 7, Autorizado: true}
+
+	clientes.On("BuscarClientePorID", uint(7)).Return(cliente, true)
+	pagos.On("ClienteTienePagoEntrada", uint(7)).Return(true)
+	seguridad.On("CrearAcceso", models.AccesoCliente{ClienteID: 7, Autorizado: true}).Return(accesoEsperado)
+
+	svc := NewSeguridadService(seguridad, clientes, pagos)
+	creado, err := svc.CrearAcceso(7)
+
+	require.NoError(t, err)
+	require.Equal(t, uint(1), creado.ID)
+	require.Equal(t, "Carlos Mero", creado.NombreCliente)
+	require.True(t, creado.PagoAlDia)
+	seguridad.AssertExpectations(t)
+	clientes.AssertExpectations(t)
+	pagos.AssertExpectations(t)
+}
+// TestListarGuardavidas_DevuelveDatosRepo verifica que el service devuelva
+// los guardavidas entregados por el repositorio.
+func TestListarGuardavidas_DevuelveDatosRepo(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		guardavidas: map[int]models.Guardavida{
+			1: {ID: 1, Nombre: "Carlos Mendoza", Turno: "mañana"},
+			2: {ID: 2, Nombre: "Pedro Salazar", Turno: "tarde"},
+		},
+	}
+	svc := NewSeguridadService(repo, &mockClienteRepo{}, &mockPagoRepo{})
+
+	lista := svc.ListarGuardavidas()
+
+	if len(lista) != 2 {
+		t.Fatalf("se esperaban 2 guardavidas, se obtuvieron %d", len(lista))
+	}
+}
+
+// TestObtenerGuardavida_Existente verifica que el service encuentre un guardavida
+// cuando el repositorio lo tiene registrado.
+func TestObtenerGuardavida_Existente(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		guardavidas: map[int]models.Guardavida{
+			1: {ID: 1, Nombre: "Carlos Mendoza", Turno: "mañana"},
+		},
+	}
+	svc := NewSeguridadService(repo, &mockClienteRepo{}, &mockPagoRepo{})
+
+	guardavida, ok := svc.ObtenerGuardavida(1)
+
+	if !ok {
+		t.Fatal("se esperaba encontrar el guardavida")
+	}
+	if guardavida.Nombre != "Carlos Mendoza" {
+		t.Fatalf("nombre inesperado: %s", guardavida.Nombre)
+	}
+}
+
+// TestListarIncidentes_EnriqueceDatos verifica que ListarIncidentes agregue
+// nombres de guardavida y cliente a cada incidente.
+func TestListarIncidentes_EnriqueceDatos(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		guardavidas: map[int]models.Guardavida{
+			1: {ID: 1, Nombre: "Carlos Mendoza"},
+		},
+		incidentes: map[int]models.Incidente{
+			1: {ID: 1, Tipo: "lesion", Gravedad: "leve", GuardavidaID: 1, ClienteID: 2},
+		},
+	}
+	clientes := &mockClienteRepo{
+		clientes: map[int]models.Cliente{
+			2: {ID: 2, Nombre: "Ana Reyes", Membresia: "mensual"},
+		},
+	}
+	svc := NewSeguridadService(repo, clientes, &mockPagoRepo{})
+
+	lista := svc.ListarIncidentes()
+
+	if len(lista) != 1 {
+		t.Fatalf("se esperaba 1 incidente, se obtuvieron %d", len(lista))
+	}
+	if lista[0].NombreGuardavida != "Carlos Mendoza" {
+		t.Fatalf("guardavida inesperado: %s", lista[0].NombreGuardavida)
+	}
+	if lista[0].NombreCliente != "Ana Reyes" {
+		t.Fatalf("cliente inesperado: %s", lista[0].NombreCliente)
+	}
+}
+
+// TestBorrarIncidente_Existente verifica que el service permita borrar
+// un incidente registrado.
+func TestBorrarIncidente_Existente(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		incidentes: map[int]models.Incidente{
+			1: {ID: 1, Tipo: "lesion", Gravedad: "leve"},
+		},
+	}
+	svc := NewSeguridadService(repo, &mockClienteRepo{}, &mockPagoRepo{})
+
+	err := svc.BorrarIncidente(1)
+
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if _, ok := repo.incidentes[1]; ok {
+		t.Fatal("se esperaba que el incidente fuera eliminado del mock")
+	}
+}
+
+// TestActualizarIncidente_Inexistente verifica que el service devuelva
+// ErrNoEncontrado cuando el repositorio no encuentra el incidente.
+func TestActualizarIncidente_Inexistente(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		incidentes: map[int]models.Incidente{},
+		accesos: []models.AccesoCliente{
+			{ClienteID: 2, Autorizado: true},
+		},
+	}
+	clientes := &mockClienteRepo{
+		clientes: map[int]models.Cliente{
+			2: {ID: 2, Nombre: "Luis Pino", Membresia: "ninguna"},
+		},
+	}
+	svc := NewSeguridadService(repo, clientes, &mockPagoRepo{})
+
+	_, err := svc.ActualizarIncidente(99, models.Incidente{
+		Tipo:         "rescate",
+		Gravedad:     "media",
+		GuardavidaID: 1,
+		ClienteID:    2,
+	})
+
+	if err != ErrNoEncontrado {
+		t.Fatalf("se esperaba ErrNoEncontrado, se obtuvo %v", err)
+	}
+}
+// TestBorrarGuardavida_Existente verifica que el service permita borrar
+// un guardavida registrado en el repositorio.
+func TestBorrarGuardavida_Existente(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		guardavidas: map[int]models.Guardavida{
+			1: {ID: 1, Nombre: "Carlos Mendoza", Turno: "mañana"},
+		},
+	}
+	svc := NewSeguridadService(repo, &mockClienteRepo{}, &mockPagoRepo{})
+
+	err := svc.BorrarGuardavida(1)
+
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if _, ok := repo.guardavidas[1]; ok {
+		t.Fatal("se esperaba que el guardavida fuera eliminado")
+	}
+}
+
+// TestActualizarGuardavida_CamposObligatorios verifica que no se actualice
+// un guardavida si faltan nombre o turno.
+func TestActualizarGuardavida_CamposObligatorios(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		guardavidas: map[int]models.Guardavida{
+			1: {ID: 1, Nombre: "Carlos Mendoza", Turno: "mañana"},
+		},
+	}
+	svc := NewSeguridadService(repo, &mockClienteRepo{}, &mockPagoRepo{})
+
+	_, err := svc.ActualizarGuardavida(1, models.Guardavida{
+		Nombre: "",
+		Turno:  "noche",
+	})
+
+	if err != ErrCampoObligatorio {
+		t.Fatalf("se esperaba ErrCampoObligatorio, se obtuvo %v", err)
+	}
+}
+
+// TestObtenerGuardavida_Inexistente verifica que ObtenerGuardavida devuelva ok=false
+// cuando el repositorio no encuentra el registro.
+func TestObtenerGuardavida_Inexistente(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		guardavidas: map[int]models.Guardavida{},
+	}
+	svc := NewSeguridadService(repo, &mockClienteRepo{}, &mockPagoRepo{})
+
+	_, ok := svc.ObtenerGuardavida(99)
+
+	if ok {
+		t.Fatal("no se esperaba encontrar el guardavida")
+	}
+}
+
+// TestObtenerIncidente_Inexistente verifica que ObtenerIncidente devuelva ok=false
+// cuando el incidente no existe.
+func TestObtenerIncidente_Inexistente(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		incidentes: map[int]models.Incidente{},
+	}
+	svc := NewSeguridadService(repo, &mockClienteRepo{}, &mockPagoRepo{})
+
+	_, ok := svc.ObtenerIncidente(99)
+
+	if ok {
+		t.Fatal("no se esperaba encontrar el incidente")
+	}
+}
+
+// TestActualizarIncidente_CamposObligatorios verifica que el service rechace
+// actualizaciones incompletas antes de consultar repositorios.
+func TestActualizarIncidente_CamposObligatorios(t *testing.T) {
+	repo := &mockSeguridadRepo{}
+	svc := NewSeguridadService(repo, &mockClienteRepo{}, &mockPagoRepo{})
+
+	_, err := svc.ActualizarIncidente(1, models.Incidente{
+		Tipo:         "",
+		Gravedad:     "leve",
+		GuardavidaID: 1,
+		ClienteID:    2,
+	})
+
+	if err != ErrCampoObligatorio {
+		t.Fatalf("se esperaba ErrCampoObligatorio, se obtuvo %v", err)
+	}
+}
+
+// TestActualizarIncidente_ClienteInvalido verifica que no se actualice un incidente
+// cuando el cliente asociado no existe.
+func TestActualizarIncidente_ClienteInvalido(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		incidentes: map[int]models.Incidente{
+			1: {ID: 1, Tipo: "lesion", Gravedad: "leve", GuardavidaID: 1, ClienteID: 2},
+		},
+	}
+	clientes := &mockClienteRepo{
+		clientes: map[int]models.Cliente{},
+	}
+	svc := NewSeguridadService(repo, clientes, &mockPagoRepo{})
+
+	_, err := svc.ActualizarIncidente(1, models.Incidente{
+		Tipo:         "rescate",
+		Gravedad:     "media",
+		GuardavidaID: 1,
+		ClienteID:    2,
+	})
+
+	if err != ErrClienteInvalido {
+		t.Fatalf("se esperaba ErrClienteInvalido, se obtuvo %v", err)
+	}
+}
+
+// TestActualizarIncidente_ClienteSinAcceso verifica que un cliente sin membresía
+// ni acceso autorizado no pueda asociarse a un incidente actualizado.
+func TestActualizarIncidente_ClienteSinAcceso(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		incidentes: map[int]models.Incidente{
+			1: {ID: 1, Tipo: "lesion", Gravedad: "leve", GuardavidaID: 1, ClienteID: 2},
+		},
+		accesos: []models.AccesoCliente{},
+	}
+	clientes := &mockClienteRepo{
+		clientes: map[int]models.Cliente{
+			2: {ID: 2, Nombre: "Luis Pino", Membresia: "ninguna"},
+		},
+	}
+	svc := NewSeguridadService(repo, clientes, &mockPagoRepo{})
+
+	_, err := svc.ActualizarIncidente(1, models.Incidente{
+		Tipo:         "rescate",
+		Gravedad:     "media",
+		GuardavidaID: 1,
+		ClienteID:    2,
+	})
+
+	if err != ErrClienteSinAcceso {
+		t.Fatalf("se esperaba ErrClienteSinAcceso, se obtuvo %v", err)
+	}
+}
+
+// TestBorrarIncidente_Inexistente verifica que el service devuelva ErrNoEncontrado
+// si se intenta borrar un incidente que no existe.
+func TestBorrarIncidente_Inexistente(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		incidentes: map[int]models.Incidente{},
+	}
+	svc := NewSeguridadService(repo, &mockClienteRepo{}, &mockPagoRepo{})
+
+	err := svc.BorrarIncidente(99)
+
+	if err != ErrNoEncontrado {
+		t.Fatalf("se esperaba ErrNoEncontrado, se obtuvo %v", err)
+	}
+}
+// TestBorrarAcceso_Existente verifica que el service permita borrar un acceso
+// registrado en el repositorio.
+func TestBorrarAcceso_Existente(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		accesos: []models.AccesoCliente{
+			{ID: 1, ClienteID: 2, Autorizado: true},
+		},
+	}
+	svc := NewSeguridadService(repo, &mockClienteRepo{}, &mockPagoRepo{})
+
+	err := svc.BorrarAcceso(1)
+
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if len(repo.accesos) != 0 {
+		t.Fatalf("se esperaba que el acceso fuera eliminado, quedan %d", len(repo.accesos))
+	}
+}
+// TestCrearIncidente_ClienteInvalidoNoLlegaAlRepo verifica que no se registre
+// un incidente cuando el cliente involucrado no existe.
+func TestCrearIncidente_ClienteInvalidoNoLlegaAlRepo(t *testing.T) {
+	repo := &mockSeguridadRepo{
+		guardavidas: map[int]models.Guardavida{
+			1: {ID: 1, Nombre: "Carlos Mendoza"},
+		},
+	}
+	clientes := &mockClienteRepo{
+		clientes: map[int]models.Cliente{},
+	}
+	svc := NewSeguridadService(repo, clientes, &mockPagoRepo{})
+
+	_, err := svc.CrearIncidente(models.Incidente{
+		Tipo:         "lesion",
+		Gravedad:     "leve",
+		GuardavidaID: 1,
+		ClienteID:    99,
+	})
+
+	if err != ErrClienteInvalido {
+		t.Fatalf("se esperaba ErrClienteInvalido, se obtuvo %v", err)
+	}
+}
+// TestCrearAcceso_ClienteIDCeroDevuelveCampoObligatorio verifica que el service
+// rechace un acceso sin cliente_id antes de consultar repositorios.
+func TestCrearAcceso_ClienteIDCeroDevuelveCampoObligatorio(t *testing.T) {
+	repo := &mockSeguridadRepo{}
+	clientes := &mockClienteRepo{clientes: map[int]models.Cliente{}}
+	pagos := &mockPagoRepo{}
+
+	svc := NewSeguridadService(repo, clientes, pagos)
+
+	_, err := svc.CrearAcceso(0)
+
+	if err != ErrCampoObligatorio {
+		t.Fatalf("se esperaba ErrCampoObligatorio, se obtuvo %v", err)
+	}
+	if repo.crearAccesoLlamado {
+		t.Fatal("CrearAcceso no debió llegar al repositorio con cliente_id cero")
 	}
 }

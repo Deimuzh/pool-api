@@ -1,0 +1,548 @@
+{
+  "info": {
+    "_postman_id": "b7c63a88-2c1a-4cc0-9bb2-4c5f3b8a2f01",
+    "name": "Piscina Comunitaria Los Ceibos API",
+    "description": "Coleccion para probar la API del proyecto Hito 3. Ejecuta primero Auth / Login para guardar el token JWT en la variable token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": []
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": []
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "usuario_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "cliente_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "guardavida_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "incidente_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "acceso_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "equipo_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "mantenimiento_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "quimico_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "reserva_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "pago_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login exitoso', function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "if (json.token) { pm.collectionVariables.set('token', json.token); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@piscina.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Listar usuarios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/usuarios/"
+          }
+        },
+        {
+          "name": "Crear usuario guardavida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) { pm.collectionVariables.set('usuario_id', pm.response.json().id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Guardavida Demo\",\n  \"email\": \"guardavida.demo@piscina.com\",\n  \"password\": \"demo12345\",\n  \"rol\": \"guardavida\"\n}"
+            },
+            "url": "{{base_url}}/usuarios/"
+          }
+        },
+        {
+          "name": "Obtener usuario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/usuarios/{{usuario_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clientes",
+      "item": [
+        {
+          "name": "Listar clientes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/clientes/"
+          }
+        },
+        {
+          "name": "Crear cliente sin membresia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) { pm.collectionVariables.set('cliente_id', pm.response.json().id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cliente Demo\",\n  \"cedula\": \"1310000001\",\n  \"email\": \"cliente.demo@example.com\",\n  \"telefono\": \"0999999999\",\n  \"membresia\": \"ninguna\"\n}"
+            },
+            "url": "{{base_url}}/clientes/"
+          }
+        },
+        {
+          "name": "Obtener cliente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/clientes/{{cliente_id}}"
+          }
+        },
+        {
+          "name": "Crear pago de entrada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) { pm.collectionVariables.set('pago_id', pm.response.json().id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente_id\": {{cliente_id}},\n  \"monto\": 3.50,\n  \"concepto\": \"entrada\",\n  \"metodo\": \"efectivo\"\n}"
+            },
+            "url": "{{base_url}}/pagos/"
+          }
+        },
+        {
+          "name": "Listar pagos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/pagos/"
+          }
+        },
+        {
+          "name": "Crear reserva",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) { pm.collectionVariables.set('reserva_id', pm.response.json().id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente_id\": {{cliente_id}},\n  \"duracion\": 60,\n  \"estado\": \"pendiente\"\n}"
+            },
+            "url": "{{base_url}}/reservas/"
+          }
+        },
+        {
+          "name": "Listar reservas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/reservas/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Seguridad",
+      "item": [
+        {
+          "name": "Crear guardavida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) { pm.collectionVariables.set('guardavida_id', pm.response.json().id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Carlos Mendoza\",\n  \"turno\": \"manana\",\n  \"certificado\": \"salvamento acuatico\",\n  \"activo\": true\n}"
+            },
+            "url": "{{base_url}}/guardavidas/"
+          }
+        },
+        {
+          "name": "Listar guardavidas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/guardavidas/"
+          }
+        },
+        {
+          "name": "Registrar acceso",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) { pm.collectionVariables.set('acceso_id', pm.response.json().id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente_id\": {{cliente_id}}\n}"
+            },
+            "url": "{{base_url}}/accesos/"
+          }
+        },
+        {
+          "name": "Listar accesos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/accesos/"
+          }
+        },
+        {
+          "name": "Crear incidente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) { pm.collectionVariables.set('incidente_id', pm.response.json().id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"lesion\",\n  \"descripcion\": \"Resbalon en zona humeda\",\n  \"gravedad\": \"leve\",\n  \"guardavida_id\": {{guardavida_id}},\n  \"cliente_id\": {{cliente_id}},\n  \"resuelto\": false\n}"
+            },
+            "url": "{{base_url}}/incidentes/"
+          }
+        },
+        {
+          "name": "Listar incidentes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/incidentes/"
+          }
+        },
+        {
+          "name": "Obtener incidente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/incidentes/{{incidente_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mantenimiento",
+      "item": [
+        {
+          "name": "Crear equipo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) { pm.collectionVariables.set('equipo_id', pm.response.json().id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Bomba principal\",\n  \"tipo\": \"bomba\",\n  \"estado\": \"operativo\"\n}"
+            },
+            "url": "{{base_url}}/equipos/"
+          }
+        },
+        {
+          "name": "Listar equipos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/equipos/"
+          }
+        },
+        {
+          "name": "Crear mantenimiento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) { pm.collectionVariables.set('mantenimiento_id', pm.response.json().id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"equipo_id\": {{equipo_id}},\n  \"descripcion\": \"Revision preventiva semanal\",\n  \"tipo\": \"preventivo\",\n  \"realizado_por\": \"Tecnico Demo\",\n  \"costo\": 25.00\n}"
+            },
+            "url": "{{base_url}}/mantenimientos/"
+          }
+        },
+        {
+          "name": "Listar mantenimientos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/mantenimientos/"
+          }
+        },
+        {
+          "name": "Crear quimico",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) { pm.collectionVariables.set('quimico_id', pm.response.json().id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cloro granulado\",\n  \"stock_actual\": 20,\n  \"unidad_medida\": \"kg\",\n  \"nivel_minimo\": 5\n}"
+            },
+            "url": "{{base_url}}/quimicos/"
+          }
+        },
+        {
+          "name": "Listar quimicos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/quimicos/"
+          }
+        }
+      ]
+    }
+  ]
+}
