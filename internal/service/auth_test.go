@@ -5,28 +5,30 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
 
 	"pool-api/internal/models"
+	"pool-api/internal/storage"
 )
 
-// mockUsuarioRepo es un repository falso en memoria para probar AuthService
-// sin depender de GORM ni de una base de datos real.
-type mockUsuarioRepo struct {
-	usuarios map[uint]models.Usuario
-	nextID   uint
+type usuarioRepoMock struct {
+	usuarios    map[uint]models.Usuario
+	emails      map[string]uint
+	siguienteID uint
+	errorCrear  error
 }
 
-// nuevoMockUsuarioRepo crea un repo vacío con contador de IDs autoincremental.
-func nuevoMockUsuarioRepo() *mockUsuarioRepo {
-	return &mockUsuarioRepo{
+var _ storage.UsuarioRepository = (*usuarioRepoMock)(nil)
+
+func newUsuarioRepoMock() *usuarioRepoMock {
+	return &usuarioRepoMock{
 		usuarios: make(map[uint]models.Usuario),
-		nextID:   1,
+		emails:   make(map[string]uint),
 	}
 }
 
-// ListarUsuarios devuelve todos los usuarios guardados en memoria.
-func (m *mockUsuarioRepo) ListarUsuarios() []models.Usuario {
+func (m *usuarioRepoMock) ListarUsuarios() []models.Usuario {
 	lista := make([]models.Usuario, 0, len(m.usuarios))
 	for _, u := range m.usuarios {
 		lista = append(lista, u)
@@ -34,33 +36,33 @@ func (m *mockUsuarioRepo) ListarUsuarios() []models.Usuario {
 	return lista
 }
 
-// BuscarUsuarioPorID simula una búsqueda por clave primaria.
-func (m *mockUsuarioRepo) BuscarUsuarioPorID(id uint) (models.Usuario, bool) {
+func (m *usuarioRepoMock) BuscarUsuarioPorID(id uint) (models.Usuario, bool) {
 	u, ok := m.usuarios[id]
 	return u, ok
 }
 
-// BuscarUsuarioPorEmail recorre el mapa y devuelve el usuario con email exacto.
-func (m *mockUsuarioRepo) BuscarUsuarioPorEmail(email string) (models.Usuario, bool) {
-	for _, u := range m.usuarios {
-		if u.Email == email {
-			return u, true
-		}
+func (m *usuarioRepoMock) BuscarUsuarioPorEmail(email string) (models.Usuario, bool) {
+	id, ok := m.emails[email]
+	if !ok {
+		return models.Usuario{}, false
 	}
-	return models.Usuario{}, false
+	return m.usuarios[id], true
 }
 
-// CrearUsuario simula el insert asignando ID y guardando en memoria.
-func (m *mockUsuarioRepo) CrearUsuario(u models.Usuario) (models.Usuario, error) {
-	u.ID = m.nextID
-	m.nextID++
+func (m *usuarioRepoMock) CrearUsuario(u models.Usuario) (models.Usuario, error) {
+	if m.errorCrear != nil {
+		return models.Usuario{}, m.errorCrear
+	}
+	m.siguienteID++
+	u.ID = m.siguienteID
 	m.usuarios[u.ID] = u
+	m.emails[u.Email] = u.ID
 	return u, nil
 }
 
-// ActualizarUsuario simula update: si el ID existe reemplaza los datos.
-func (m *mockUsuarioRepo) ActualizarUsuario(id uint, datos models.Usuario) (models.Usuario, bool) {
-	if _, ok := m.usuarios[id]; !ok {
+func (m *usuarioRepoMock) ActualizarUsuario(id uint, datos models.Usuario) (models.Usuario, bool) {
+	_, ok := m.usuarios[id]
+	if !ok {
 		return models.Usuario{}, false
 	}
 	datos.ID = id
@@ -68,31 +70,198 @@ func (m *mockUsuarioRepo) ActualizarUsuario(id uint, datos models.Usuario) (mode
 	return datos, true
 }
 
-// BorrarUsuario simula delete y devuelve false si el ID no existe.
-func (m *mockUsuarioRepo) BorrarUsuario(id uint) bool {
-	if _, ok := m.usuarios[id]; !ok {
+func (m *usuarioRepoMock) BorrarUsuario(id uint) bool {
+	_, ok := m.usuarios[id]
+	if !ok {
 		return false
 	}
 	delete(m.usuarios, id)
 	return true
 }
 
-// TestAuthService_LoginValidoGeneraToken verifica que credenciales correctas
-// generen un JWT válido con el ID y rol del usuario.
-func TestAuthService_LoginValidoGeneraToken(t *testing.T) {
-	repo := nuevoMockUsuarioRepo()
+// ── Tests desde HEAD ──────────────────────────────────────────────────
 
-	// Guardamos un hash real para probar bcrypt igual que en producción.
+func TestAuthService_Login_Exitoso(t *testing.T) {
+	repo := newUsuarioRepoMock()
+	hash, _ := bcrypt.GenerateFromPassword([]byte("clave123"), bcrypt.DefaultCost)
+	repo.CrearUsuario(models.Usuario{Nombre: "Test", Email: "test@correo.com", PasswordHash: string(hash), Rol: "admin"})
+	svc := NewAuthService(repo)
+
+	token, u, err := svc.Login("test@correo.com", "clave123")
+	require.NoError(t, err)
+	require.NotEmpty(t, token)
+	require.Equal(t, "Test", u.Nombre)
+}
+
+func TestAuthService_Login_CredencialesInvalidas(t *testing.T) {
+	repo := newUsuarioRepoMock()
+	svc := NewAuthService(repo)
+
+	_, _, err := svc.Login("no@existe.com", "clave")
+	require.ErrorIs(t, err, ErrCredencialesInvalidas)
+}
+
+func TestAuthService_Login_PasswordIncorrecto(t *testing.T) {
+	repo := newUsuarioRepoMock()
+	hash, _ := bcrypt.GenerateFromPassword([]byte("correcta"), bcrypt.DefaultCost)
+	repo.CrearUsuario(models.Usuario{Nombre: "Test", Email: "test@correo.com", PasswordHash: string(hash), Rol: "admin"})
+	svc := NewAuthService(repo)
+
+	_, _, err := svc.Login("test@correo.com", "incorrecta")
+	require.ErrorIs(t, err, ErrCredencialesInvalidas)
+}
+
+func TestAuthService_Login_CamposVacios(t *testing.T) {
+	svc := NewAuthService(newUsuarioRepoMock())
+	_, _, err := svc.Login("", "")
+	require.ErrorIs(t, err, ErrCredencialesInvalidas)
+}
+
+func TestAuthService_CrearUsuario_Exitoso(t *testing.T) {
+	repo := newUsuarioRepoMock()
+	svc := NewAuthService(repo)
+
+	u, err := svc.CrearUsuario("Juan", "juan@correo.com", "clave123", "admin")
+	require.NoError(t, err)
+	require.NotZero(t, u.ID)
+	require.Equal(t, "juan@correo.com", u.Email)
+	require.NotEmpty(t, u.PasswordHash)
+}
+
+func TestAuthService_CrearUsuario_CamposVacios(t *testing.T) {
+	svc := NewAuthService(newUsuarioRepoMock())
+	_, err := svc.CrearUsuario("", "", "", "")
+	require.ErrorIs(t, err, ErrCampoObligatorio)
+}
+
+func TestAuthService_CrearUsuario_RolPorDefecto(t *testing.T) {
+	repo := newUsuarioRepoMock()
+	svc := NewAuthService(repo)
+
+	u, err := svc.CrearUsuario("Juan", "juan@correo.com", "clave123", "")
+	require.NoError(t, err)
+	require.Equal(t, "admin", u.Rol)
+}
+
+func TestAuthService_CrearUsuario_EmailDuplicado(t *testing.T) {
+	repo := newUsuarioRepoMock()
+	svc := NewAuthService(repo)
+
+	svc.CrearUsuario("Juan", "juan@correo.com", "clave123", "admin")
+	_, err := svc.CrearUsuario("Pedro", "juan@correo.com", "otra123", "admin")
+	require.ErrorIs(t, err, ErrEmailEnUso)
+}
+
+func TestAuthService_ActualizarUsuario_Exitoso(t *testing.T) {
+	repo := newUsuarioRepoMock()
+	svc := NewAuthService(repo)
+	creado, _ := svc.CrearUsuario("Juan", "juan@correo.com", "clave123", "admin")
+
+	actualizado, err := svc.ActualizarUsuario(creado.ID, "Juan Editado", "juan@correo.com", "", "guardavida")
+	require.NoError(t, err)
+	require.Equal(t, "Juan Editado", actualizado.Nombre)
+}
+
+func TestAuthService_ActualizarUsuario_CamposVacios(t *testing.T) {
+	svc := NewAuthService(newUsuarioRepoMock())
+	_, err := svc.ActualizarUsuario(1, "", "", "", "")
+	require.ErrorIs(t, err, ErrCampoObligatorio)
+}
+
+func TestAuthService_ActualizarUsuario_NoEncontrado(t *testing.T) {
+	svc := NewAuthService(newUsuarioRepoMock())
+	_, err := svc.ActualizarUsuario(99, "Nombre", "email@correo.com", "", "admin")
+	require.ErrorIs(t, err, ErrNoEncontrado)
+}
+
+func TestAuthService_BorrarUsuario_Exitoso(t *testing.T) {
+	repo := newUsuarioRepoMock()
+	svc := NewAuthService(repo)
+	creado, _ := svc.CrearUsuario("Juan", "juan@correo.com", "clave123", "admin")
+
+	err := svc.BorrarUsuario(creado.ID)
+	require.NoError(t, err)
+}
+
+func TestAuthService_BorrarUsuario_NoEncontrado(t *testing.T) {
+	svc := NewAuthService(newUsuarioRepoMock())
+	err := svc.BorrarUsuario(99)
+	require.ErrorIs(t, err, ErrNoEncontrado)
+}
+
+func TestAuthService_ListarUsuarios(t *testing.T) {
+	repo := newUsuarioRepoMock()
+	svc := NewAuthService(repo)
+	svc.CrearUsuario("Juan", "juan@correo.com", "clave123", "admin")
+	svc.CrearUsuario("Ana", "ana@correo.com", "clave456", "guardavida")
+
+	usuarios := svc.ListarUsuarios()
+	require.Len(t, usuarios, 2)
+}
+
+func TestAuthService_ObtenerUsuario(t *testing.T) {
+	repo := newUsuarioRepoMock()
+	svc := NewAuthService(repo)
+	creado, _ := svc.CrearUsuario("Juan", "juan@correo.com", "clave123", "admin")
+
+	u, ok := svc.ObtenerUsuario(creado.ID)
+	require.True(t, ok)
+	require.Equal(t, "Juan", u.Nombre)
+
+	_, ok = svc.ObtenerUsuario(99)
+	require.False(t, ok)
+}
+
+func TestAuthService_ValidarToken_Exitoso(t *testing.T) {
+	repo := newUsuarioRepoMock()
+	hash, _ := bcrypt.GenerateFromPassword([]byte("clave123"), bcrypt.DefaultCost)
+	repo.CrearUsuario(models.Usuario{Nombre: "Test", Email: "test@correo.com", PasswordHash: string(hash), Rol: "admin"})
+	svc := NewAuthService(repo)
+
+	token, _, _ := svc.Login("test@correo.com", "clave123")
+	claims, err := svc.ValidarToken(token)
+	require.NoError(t, err)
+	require.Equal(t, "admin", claims.Rol)
+}
+
+func TestAuthService_ValidarToken_Invalido(t *testing.T) {
+	svc := NewAuthService(newUsuarioRepoMock())
+	_, err := svc.ValidarToken("token-malformado")
+	require.ErrorIs(t, err, ErrCredencialesInvalidas)
+}
+
+func TestAuthService_WithOpciones(t *testing.T) {
+	svc := NewAuthService(
+		newUsuarioRepoMock(),
+		WithSecreto([]byte("mi-secreto-personalizado")),
+		WithDuracionToken(1*time.Hour),
+	)
+	require.NotNil(t, svc)
+}
+
+func TestAuthService_WithSecretoVacioNoCambia(t *testing.T) {
+	svc := NewAuthService(newUsuarioRepoMock(), WithSecreto([]byte{}))
+	require.NotNil(t, svc)
+}
+
+func TestAuthService_WithDuracionCeroNoCambia(t *testing.T) {
+	svc := NewAuthService(newUsuarioRepoMock(), WithDuracionToken(0))
+	require.NotNil(t, svc)
+}
+
+// ── Tests desde origin/main ───────────────────────────────────────────
+
+func TestAuthService_LoginValidoGeneraToken(t *testing.T) {
+	repo := newUsuarioRepoMock()
+
 	hash, _ := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
-	repo.usuarios[1] = models.Usuario{
-		ID:           1,
+	repo.CrearUsuario(models.Usuario{
 		Nombre:       "Admin",
 		Email:        "admin@piscina.com",
 		PasswordHash: string(hash),
 		Rol:          "admin",
-	}
+	})
 
-	// Inyectamos secreto/duración para poder validar el token generado.
 	svc := NewAuthService(repo, WithSecreto([]byte("secreto-test")), WithDuracionToken(time.Hour))
 
 	token, usuario, err := svc.Login(" ADMIN@PISCINA.COM ", " admin123 ")
@@ -106,30 +275,17 @@ func TestAuthService_LoginValidoGeneraToken(t *testing.T) {
 		t.Fatalf("usuario inesperado: %+v", usuario)
 	}
 
-	// ValidarToken debe recuperar los claims que Login firmó.
 	claims, err := svc.ValidarToken(token)
 	if err != nil {
-		t.Fatalf("token generado debería ser válido: %v", err)
+		t.Fatalf("token generado deberia ser valido: %v", err)
 	}
 	if claims.UsuarioID != 1 || claims.Rol != "admin" {
 		t.Fatalf("claims inesperados: %+v", claims)
 	}
 }
 
-// TestAuthService_LoginCredencialesInvalidas cubre email vacío, usuario
-// inexistente y contraseña incorrecta.
 func TestAuthService_LoginCredencialesInvalidas(t *testing.T) {
-	repo := nuevoMockUsuarioRepo()
-
-	hash, _ := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
-	repo.usuarios[1] = models.Usuario{
-		ID:           1,
-		Email:        "admin@piscina.com",
-		PasswordHash: string(hash),
-		Rol:          "admin",
-	}
-
-	svc := NewAuthService(repo)
+	svc := NewAuthService(newUsuarioRepoMock())
 
 	casos := []struct {
 		nombre   string
@@ -138,7 +294,6 @@ func TestAuthService_LoginCredencialesInvalidas(t *testing.T) {
 	}{
 		{"email vacio", "", "admin123"},
 		{"usuario inexistente", "nadie@piscina.com", "admin123"},
-		{"password incorrecto", "admin@piscina.com", "mal"},
 	}
 
 	for _, tc := range casos {
@@ -151,27 +306,22 @@ func TestAuthService_LoginCredencialesInvalidas(t *testing.T) {
 	}
 }
 
-// TestAuthService_ValidarTokenInvalido verifica que un token malformado o
-// firmado con otro secreto sea rechazado.
 func TestAuthService_ValidarTokenInvalido(t *testing.T) {
-	repo := nuevoMockUsuarioRepo()
+	repo := newUsuarioRepoMock()
 	svc := NewAuthService(repo, WithSecreto([]byte("secreto-correcto")))
 
-	// Token malformado: no tiene estructura JWT válida.
 	if _, err := svc.ValidarToken("token-malo"); !errors.Is(err, ErrCredencialesInvalidas) {
 		t.Fatalf("se esperaba ErrCredencialesInvalidas, se obtuvo %v", err)
 	}
 
 	hash, _ := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
-	repo.usuarios[1] = models.Usuario{
-		ID:           1,
+	repo.CrearUsuario(models.Usuario{
+		Nombre:       "Admin",
 		Email:        "admin@piscina.com",
 		PasswordHash: string(hash),
 		Rol:          "admin",
-	}
+	})
 
-	// Generamos un token con otro secreto para confirmar que el service actual
-	// lo rechaza por firma inválida.
 	otroSvc := NewAuthService(repo, WithSecreto([]byte("otro-secreto")))
 	token, _, err := otroSvc.Login("admin@piscina.com", "admin123")
 	if err != nil {
@@ -183,13 +333,10 @@ func TestAuthService_ValidarTokenInvalido(t *testing.T) {
 	}
 }
 
-// TestAuthService_CrearUsuarioValido verifica que el service normalice el email,
-// asigne rol admin por defecto y guarde password hasheado.
 func TestAuthService_CrearUsuarioValido(t *testing.T) {
-	repo := nuevoMockUsuarioRepo()
+	repo := newUsuarioRepoMock()
 	svc := NewAuthService(repo)
 
-	// Enviamos email/password con espacios para probar TrimSpace y ToLower.
 	creado, err := svc.CrearUsuario("Admin", " ADMIN@PISCINA.COM ", " clave123 ", "")
 	if err != nil {
 		t.Fatalf("no se esperaba error: %v", err)
@@ -208,12 +355,10 @@ func TestAuthService_CrearUsuarioValido(t *testing.T) {
 	}
 }
 
-// TestAuthService_CrearUsuarioErrores cubre campos obligatorios y email duplicado.
 func TestAuthService_CrearUsuarioErrores(t *testing.T) {
-	repo := nuevoMockUsuarioRepo()
+	repo := newUsuarioRepoMock()
 	svc := NewAuthService(repo)
 
-	// Nombre vacío debe cortar antes de guardar.
 	if _, err := svc.CrearUsuario("", "admin@piscina.com", "clave123", "admin"); !errors.Is(err, ErrCampoObligatorio) {
 		t.Fatalf("se esperaba ErrCampoObligatorio, se obtuvo %v", err)
 	}
@@ -222,17 +367,14 @@ func TestAuthService_CrearUsuarioErrores(t *testing.T) {
 		t.Fatalf("no se esperaba error creando usuario inicial: %v", err)
 	}
 
-	// El service normaliza email, por eso ADMIN@... debe detectarse duplicado.
 	if _, err := svc.CrearUsuario("Otro", "ADMIN@PISCINA.COM", "otra", "admin"); !errors.Is(err, ErrEmailEnUso) {
 		t.Fatalf("se esperaba ErrEmailEnUso, se obtuvo %v", err)
 	}
 }
 
-// TestAuthService_ListarYObtenerUsuarios verifica que el service delegue listado
-// y búsqueda por ID al repository.
 func TestAuthService_ListarYObtenerUsuarios(t *testing.T) {
-	repo := nuevoMockUsuarioRepo()
-	repo.usuarios[1] = models.Usuario{ID: 1, Nombre: "Admin", Email: "admin@piscina.com", Rol: "admin"}
+	repo := newUsuarioRepoMock()
+	repo.CrearUsuario(models.Usuario{Nombre: "Admin", Email: "admin@piscina.com", Rol: "admin"})
 
 	svc := NewAuthService(repo)
 
@@ -249,28 +391,17 @@ func TestAuthService_ListarYObtenerUsuarios(t *testing.T) {
 	}
 }
 
-// TestAuthService_ActualizarUsuario verifica actualización sin password y con
-// password nueva, incluyendo el caso de ID inexistente.
 func TestAuthService_ActualizarUsuario(t *testing.T) {
-	repo := nuevoMockUsuarioRepo()
-	repo.usuarios[1] = models.Usuario{
-		ID:           1,
-		Nombre:       "Admin",
-		Email:        "admin@piscina.com",
-		PasswordHash: "hash-viejo",
-		Rol:          "admin",
-	}
+	repo := newUsuarioRepoMock()
 	svc := NewAuthService(repo)
 
-	// Nombre vacío debe devolver error de validación.
-	if _, err := svc.ActualizarUsuario(1, "", "admin@piscina.com", "", "admin"); !errors.Is(err, ErrCampoObligatorio) {
+	creado, _ := svc.CrearUsuario("Admin", "admin@piscina.com", "clave123", "admin")
+
+	if _, err := svc.ActualizarUsuario(creado.ID, "", "admin@piscina.com", "", "admin"); !errors.Is(err, ErrCampoObligatorio) {
 		t.Fatalf("se esperaba ErrCampoObligatorio, se obtuvo %v", err)
 	}
 
-	// Sin password nueva: el service manda PasswordHash vacío y el repo conserva
-	// la regla en producción. Este mock reemplaza datos, pero igual probamos
-	// normalización de email y rol.
-	actualizado, err := svc.ActualizarUsuario(1, "Admin Editado", " ADMIN@PISCINA.COM ", "", "guardavida")
+	actualizado, err := svc.ActualizarUsuario(creado.ID, "Admin Editado", " ADMIN@PISCINA.COM ", "", "guardavida")
 	if err != nil {
 		t.Fatalf("no se esperaba error: %v", err)
 	}
@@ -278,8 +409,7 @@ func TestAuthService_ActualizarUsuario(t *testing.T) {
 		t.Fatalf("usuario actualizado inesperado: %+v", actualizado)
 	}
 
-	// Con password nueva: debe llegar hasheada al repo.
-	actualizado, err = svc.ActualizarUsuario(1, "Admin Editado", "admin@piscina.com", "nueva123", "admin")
+	actualizado, err = svc.ActualizarUsuario(creado.ID, "Admin Editado", "admin@piscina.com", "nueva123", "admin")
 	if err != nil {
 		t.Fatalf("no se esperaba error actualizando password: %v", err)
 	}
@@ -287,7 +417,7 @@ func TestAuthService_ActualizarUsuario(t *testing.T) {
 		t.Fatal("se esperaba nuevo hash de password")
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(actualizado.PasswordHash), []byte("nueva123")); err != nil {
-		t.Fatalf("hash nuevo inválido: %v", err)
+		t.Fatalf("hash nuevo invalido: %v", err)
 	}
 
 	if _, err := svc.ActualizarUsuario(999, "No Existe", "no@piscina.com", "", "admin"); !errors.Is(err, ErrNoEncontrado) {
@@ -295,14 +425,13 @@ func TestAuthService_ActualizarUsuario(t *testing.T) {
 	}
 }
 
-// TestAuthService_BorrarUsuario verifica borrado exitoso y error cuando el ID no existe.
 func TestAuthService_BorrarUsuario(t *testing.T) {
-	repo := nuevoMockUsuarioRepo()
-	repo.usuarios[1] = models.Usuario{ID: 1, Nombre: "Admin"}
-
+	repo := newUsuarioRepoMock()
 	svc := NewAuthService(repo)
 
-	if err := svc.BorrarUsuario(1); err != nil {
+	creado, _ := svc.CrearUsuario("Admin", "admin@piscina.com", "clave123", "admin")
+
+	if err := svc.BorrarUsuario(creado.ID); err != nil {
 		t.Fatalf("no se esperaba error borrando usuario: %v", err)
 	}
 	if err := svc.BorrarUsuario(999); !errors.Is(err, ErrNoEncontrado) {
@@ -311,7 +440,7 @@ func TestAuthService_BorrarUsuario(t *testing.T) {
 }
 
 func TestClientesService_LoginClienteExitoso(t *testing.T) {
-	repo := nuevoMockUsuarioRepo()
+	repo := newUsuarioRepoMock()
 	svc := NewAuthService(repo)
 
 	u, _ := svc.CrearUsuario("Cliente Uno", "cliente@test.com", "pass123", "cliente")
@@ -326,8 +455,7 @@ func TestClientesService_LoginClienteExitoso(t *testing.T) {
 }
 
 func TestClientesService_LoginClienteCredencialesInvalidas(t *testing.T) {
-	repo := nuevoMockUsuarioRepo()
-	svc := NewAuthService(repo)
+	svc := NewAuthService(newUsuarioRepoMock())
 
 	_, _, err := svc.Login("", "")
 	if err != ErrCredencialesInvalidas {
@@ -336,7 +464,7 @@ func TestClientesService_LoginClienteCredencialesInvalidas(t *testing.T) {
 }
 
 func TestPagoCliente_ActualizarUsuario(t *testing.T) {
-	repo := nuevoMockUsuarioRepo()
+	repo := newUsuarioRepoMock()
 	svc := NewAuthService(repo)
 
 	original, _ := svc.CrearUsuario("Original", "orig@test.com", "pass123", "admin")

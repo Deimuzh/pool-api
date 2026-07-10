@@ -42,7 +42,7 @@ func Auth(auth *service.AuthService) func(next http.Handler) http.Handler {
 				responderNoAutorizado(w)
 				return
 			}
-
+// Guarda usuarioID y rol en el context para handlers posteriores
 			ctx := context.WithValue(r.Context(), ContextKeyUsuarioID, claims.UsuarioID)
 			ctx = context.WithValue(ctx, ContextKeyRol, claims.Rol)
 			next.ServeHTTP(w, r.WithContext(ctx))
