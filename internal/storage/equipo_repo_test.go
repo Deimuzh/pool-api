@@ -18,6 +18,23 @@ func abrirDBEquipo(t *testing.T) *gorm.DB {
 	return db
 }
 
+func TestEquipoRepo_ListarVacio(t *testing.T) {
+	db := abrirDBEquipo(t)
+	repo := NuevoAlmacenSQLite(db)
+	lista := repo.ListarEquipos()
+	require.Empty(t, lista)
+}
+
+func TestEquipoRepo_Crear_ErrorDB(t *testing.T) {
+	db := abrirDBEquipo(t)
+	sqlDB, _ := db.DB()
+	sqlDB.Close()
+
+	repo := NuevoAlmacenSQLite(db)
+	_, err := repo.CrearEquipo(models.Equipo{Nombre: "Bomba", Tipo: "bomba"})
+	require.Error(t, err)
+}
+
 func TestEquipoRepo_CrearYListar(t *testing.T) {
 	db := abrirDBEquipo(t)
 	repo := NuevoAlmacenSQLite(db)
