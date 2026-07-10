@@ -25,6 +25,22 @@ func TestEquipoRepo_ListarVacio(t *testing.T) {
 	require.Empty(t, lista)
 }
 
+func TestEquipoRepo_Crear_ConTodosLosCampos(t *testing.T) {
+	db := abrirDBEquipo(t)
+	repo := NuevoAlmacenSQLite(db)
+
+	e := models.Equipo{
+		Nombre: "Bomba Principal",
+		Tipo:   "bomba",
+		Estado: "averiado",
+	}
+	creado, err := repo.CrearEquipo(e)
+	require.NoError(t, err)
+	require.NotZero(t, creado.ID)
+	require.Equal(t, "Bomba Principal", creado.Nombre)
+	require.Equal(t, "averiado", creado.Estado)
+}
+
 func TestEquipoRepo_Crear_ErrorDB(t *testing.T) {
 	db := abrirDBEquipo(t)
 	sqlDB, _ := db.DB()
@@ -46,6 +62,18 @@ func TestEquipoRepo_CrearYListar(t *testing.T) {
 	lista := repo.ListarEquipos()
 	require.Len(t, lista, 1)
 	require.Equal(t, "Bomba", lista[0].Nombre)
+}
+
+func TestEquipoRepo_MultiplesEquiposLista(t *testing.T) {
+	db := abrirDBEquipo(t)
+	repo := NuevoAlmacenSQLite(db)
+
+	repo.CrearEquipo(models.Equipo{Nombre: "Bomba", Tipo: "bomba"})
+	repo.CrearEquipo(models.Equipo{Nombre: "Filtro", Tipo: "filtracion"})
+	repo.CrearEquipo(models.Equipo{Nombre: "Clorador", Tipo: "quimico"})
+
+	lista := repo.ListarEquipos()
+	require.Len(t, lista, 3)
 }
 
 func TestEquipoRepo_BuscarPorID(t *testing.T) {
