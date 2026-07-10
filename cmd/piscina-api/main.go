@@ -56,6 +56,7 @@ func run(cfg config.Config) error {
 	}
 
 	almacen := storage.NuevoAlmacenSQLite(db)
+	almacen.SembrarSiVacio() // crea admin@piscina.com / admin123 si no existe ningún usuario
 
 	// Aquí inicia la inyección de dependencias: el almacenamiento se pasa a los services
 	// por medio de interfaces, y luego los handlers reciben esos services.
