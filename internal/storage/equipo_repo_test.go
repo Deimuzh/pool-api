@@ -30,3 +30,22 @@ func TestEquipoRepo_CrearYListar(t *testing.T) {
 	require.Len(t, lista, 1)
 	require.Equal(t, "Bomba", lista[0].Nombre)
 }
+
+func TestEquipoRepo_BuscarPorID(t *testing.T) {
+	db := abrirDBEquipo(t)
+	repo := NuevoAlmacenSQLite(db)
+
+	creado, _ := repo.CrearEquipo(models.Equipo{Nombre: "Filtro", Tipo: "filtracion", Estado: "operativo"})
+
+	encontrado, ok := repo.BuscarEquipoPorID(creado.ID)
+	require.True(t, ok)
+	require.Equal(t, "Filtro", encontrado.Nombre)
+}
+
+func TestEquipoRepo_BuscarPorID_NoEncontrado(t *testing.T) {
+	db := abrirDBEquipo(t)
+	repo := NuevoAlmacenSQLite(db)
+
+	_, ok := repo.BuscarEquipoPorID(999)
+	require.False(t, ok)
+}
