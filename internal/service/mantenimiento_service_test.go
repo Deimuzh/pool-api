@@ -21,7 +21,13 @@ func newMantenimientoRepoMock() *mantenimientoRepoMock {
 	return &mantenimientoRepoMock{equipos: make(map[uint]models.Equipo)}
 }
 
-func (m *mantenimientoRepoMock) ListarEquipos() []models.Equipo { return nil }
+func (m *mantenimientoRepoMock) ListarEquipos() []models.Equipo {
+	lista := make([]models.Equipo, 0, len(m.equipos))
+	for _, e := range m.equipos {
+		lista = append(lista, e)
+	}
+	return lista
+}
 func (m *mantenimientoRepoMock) BuscarEquipoPorID(id uint) (models.Equipo, bool) {
 	e, ok := m.equipos[id]
 	return e, ok

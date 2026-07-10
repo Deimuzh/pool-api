@@ -138,6 +138,18 @@ func TestEquipoService_Actualizar_NoEncontrado(t *testing.T) {
 	}
 }
 
+func TestEquipoService_ListarConDatos(t *testing.T) {
+	repo := newMantenimientoRepoMock()
+	repo.equipos[1] = models.Equipo{Nombre: "Bomba", Tipo: "bomba"}
+	repo.equipos[2] = models.Equipo{Nombre: "Filtro", Tipo: "filtracion"}
+	svc := NewMantenimientoService(repo)
+
+	lista := svc.ListarEquipos()
+	if len(lista) != 2 {
+		t.Fatalf("se esperaban 2 equipos, se obtuvo %d", len(lista))
+	}
+}
+
 func TestEquipoService_Borrar_Exitoso(t *testing.T) {
 	repo := newMantenimientoRepoMock()
 	repo.equipos[1] = models.Equipo{Nombre: "Bomba", Tipo: "bomba"}
@@ -146,6 +158,19 @@ func TestEquipoService_Borrar_Exitoso(t *testing.T) {
 	err := svc.BorrarEquipo(1)
 	if err != nil {
 		t.Fatalf("no se esperaba error: %v", err)
+	}
+}
+
+func TestEquipoService_Borrar_VerificaListaVaciaDespues(t *testing.T) {
+	repo := newMantenimientoRepoMock()
+	repo.equipos[1] = models.Equipo{Nombre: "Bomba", Tipo: "bomba"}
+	svc := NewMantenimientoService(repo)
+
+	svc.BorrarEquipo(1)
+
+	lista := svc.ListarEquipos()
+	if len(lista) != 0 {
+		t.Fatalf("la lista debe estar vacia tras borrar, se obtuvo %d", len(lista))
 	}
 }
 
