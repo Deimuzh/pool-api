@@ -28,12 +28,22 @@ func newMantenimientoRepoMock() *mantenimientoRepoMock {
 
 var _ storage.MantenimientoRepository = (*mantenimientoRepoMock)(nil)
 
-func (m *mantenimientoRepoMock) ListarEquipos() []models.Equipo { return nil }
+func (m *mantenimientoRepoMock) ListarEquipos() []models.Equipo {
+	lista := make([]models.Equipo, 0, len(m.equipos))
+	for _, e := range m.equipos {
+		lista = append(lista, e)
+	}
+	return lista
+}
 func (m *mantenimientoRepoMock) BuscarEquipoPorID(id uint) (models.Equipo, bool) {
 	e, ok := m.equipos[id]
 	return e, ok
 }
-func (m *mantenimientoRepoMock) CrearEquipo(e models.Equipo) (models.Equipo, error) { return e, nil }
+func (m *mantenimientoRepoMock) CrearEquipo(e models.Equipo) (models.Equipo, error) {
+	e.ID = uint(len(m.equipos) + 1)
+	m.equipos[e.ID] = e
+	return e, nil
+}
 func (m *mantenimientoRepoMock) ActualizarEquipo(id uint, datos models.Equipo) (models.Equipo, bool) {
 	e, ok := m.equipos[id]
 	if !ok {
@@ -64,17 +74,21 @@ func (m *mantenimientoRepoMock) BuscarRegistroPorID(id uint) (models.RegistroMan
 	return models.RegistroMantenimiento{}, false
 }
 func (m *mantenimientoRepoMock) CrearRegistro(rm models.RegistroMantenimiento) (models.RegistroMantenimiento, error) {
+	rm.ID = uint(len(m.equipos) + 100)
 	return rm, nil
 }
 func (m *mantenimientoRepoMock) ActualizarRegistro(id uint, datos models.RegistroMantenimiento) (models.RegistroMantenimiento, bool) {
 	return models.RegistroMantenimiento{}, false
 }
 func (m *mantenimientoRepoMock) BorrarRegistro(id uint) bool { return false }
-func (m *mantenimientoRepoMock) ListarQuimicos() []models.ProductoQuimico { return nil }
+func (m *mantenimientoRepoMock) ListarQuimicos() []models.ProductoQuimico {
+	return nil
+}
 func (m *mantenimientoRepoMock) BuscarQuimicoPorID(id uint) (models.ProductoQuimico, bool) {
 	return models.ProductoQuimico{}, false
 }
 func (m *mantenimientoRepoMock) CrearQuimico(q models.ProductoQuimico) (models.ProductoQuimico, error) {
+	q.ID = 1
 	return q, nil
 }
 func (m *mantenimientoRepoMock) ActualizarQuimico(id uint, datos models.ProductoQuimico) (models.ProductoQuimico, bool) {
@@ -120,6 +134,43 @@ func TestListarEquipos(t *testing.T) {
 	router.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("se esperaba 200, se obtuvo %d", rec.Code)
+	}
+}
+
+func TestListarEquipos_ResponseBody(t *testing.T) {
+	router := montarRouterMantenimientoPrueba()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/equipos/", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("se esperaba 200, se obtuvo %d", rec.Code)
+	}
+	var lista []models.Equipo
+	if err := json.NewDecoder(rec.Body).Decode(&lista); err != nil {
+		t.Fatalf("error decodificando respuesta: %v", err)
+	}
+	if len(lista) == 0 {
+		t.Fatal("la lista no debe estar vacia")
+	}
+	if lista[0].Nombre != "Bomba" {
+		t.Fatalf("se esperaba Bomba, se obtuvo %s", lista[0].Nombre)
+	}
+}
+
+func TestCrearEquipo_Handler_VerificaResponse(t *testing.T) {
+	router := montarRouterMantenimientoPrueba()
+	body, _ := json.Marshal(models.Equipo{Nombre: "Clorador", Tipo: "quimico"})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/equipos/", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("se esperaba 201, se obtuvo %d: %s", rec.Code, rec.Body.String())
+	}
+	var creado models.Equipo
+	json.NewDecoder(rec.Body).Decode(&creado)
+	if creado.Nombre != "Clorador" {
+		t.Fatalf("se esperaba Clorador, se obtuvo %s", creado.Nombre)
 	}
 }
 
