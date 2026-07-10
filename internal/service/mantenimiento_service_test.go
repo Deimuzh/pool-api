@@ -32,9 +32,30 @@ func (m *mantenimientoRepoMock) CrearEquipo(e models.Equipo) (models.Equipo, err
 	return e, nil
 }
 func (m *mantenimientoRepoMock) ActualizarEquipo(id uint, datos models.Equipo) (models.Equipo, bool) {
-	return models.Equipo{}, false
+	e, ok := m.equipos[id]
+	if !ok {
+		return models.Equipo{}, false
+	}
+	if datos.Nombre != "" {
+		e.Nombre = datos.Nombre
+	}
+	if datos.Tipo != "" {
+		e.Tipo = datos.Tipo
+	}
+	if datos.Estado != "" {
+		e.Estado = datos.Estado
+	}
+	m.equipos[id] = e
+	return e, true
 }
-func (m *mantenimientoRepoMock) BorrarEquipo(id uint) bool { return false }
+func (m *mantenimientoRepoMock) BorrarEquipo(id uint) bool {
+	_, ok := m.equipos[id]
+	if !ok {
+		return false
+	}
+	delete(m.equipos, id)
+	return true
+}
 
 func (m *mantenimientoRepoMock) ListarRegistros() []models.RegistroMantenimiento { return nil }
 func (m *mantenimientoRepoMock) BuscarRegistroPorID(id uint) (models.RegistroMantenimiento, bool) {
